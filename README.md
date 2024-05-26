@@ -1,2 +1,2 @@
 # ratatui_starter
- Simple ratatui start template
+ Simple Ratatui Starter Template without any functionality. 
