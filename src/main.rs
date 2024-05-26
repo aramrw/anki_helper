@@ -18,3 +18,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
+    enable_raw_mode()?;
+    stdout().execute(EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout());
+    let term = Terminal::new(backend)?;
+    Ok(term)
+}
+
