@@ -10,3 +10,9 @@ impl AppState {
     }
 }
 
+
+    fn draw(&mut self, term: &mut Terminal<impl Backend>) -> io::Result<()> {
+        term.draw(|f| f.render_widget(self, f.size()))?;
+        Ok(())
+    }
+}
