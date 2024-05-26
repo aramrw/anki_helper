@@ -17,6 +17,7 @@ use ratatui::prelude::*;
 fn main() -> Result<(), Box<dyn Error>> {
     init_error_hooks()?;
     let term = init_terminal()?;
+    app::AppState::new().run(term)?;
 
     restore_terminal()?;
     Ok(())
