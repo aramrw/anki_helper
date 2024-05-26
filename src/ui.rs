@@ -5,3 +5,5 @@ use ratatui::{
 
 use crate::app::AppState;
 
+impl Widget for &mut AppState {
+    fn render(self, area: Rect, buf: &mut Buffer) {
