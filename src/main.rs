@@ -10,3 +10,11 @@ use crossterm::{
 };
 use ratatui::prelude::*;
 
+fn main() -> Result<(), Box<dyn Error>> {
+    init_error_hooks()?;
+    let term = init_terminal()?;
+
+    restore_terminal()?;
+    Ok(())
+}
+
