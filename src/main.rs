@@ -26,3 +26,9 @@ fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
     Ok(term)
 }
 
+fn restore_terminal() -> color_eyre::Result<()> {
+    disable_raw_mode()?;
+    stdout().execute(LeaveAlternateScreen)?;
+    Ok(())
+}
+
