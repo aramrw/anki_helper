@@ -34,3 +34,18 @@ impl AppState {
         self.expressions_state.select(Some(i));
     }
 
+    pub fn select_next_exp(&mut self) {
+        let i = match self.expressions_state.selected() {
+            Some(i) => {
+                if i == self.expressions.len() - 1 {
+                    0
+                } else {
+                    i + 1
+                }
+            }
+            None => self.selected_expression.unwrap_or(0),
+        };
+
+        self.expressions_state.select(Some(i));
+    }
+}
