@@ -103,7 +103,7 @@ impl AppState {
                     .add_modifier(Modifier::REVERSED)
                     .fg(Color::White),
             )
-            .highlight_symbol("► ")
+            .highlight_symbol("⇢ ")
             .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
 
         StatefulWidget::render(words, expressions_area, buf, &mut self.expressions_state);
