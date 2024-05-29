@@ -87,5 +87,36 @@ impl AppState {
             .render(area, buf);
     }
 
+    fn rend_main(&mut self, area: Rect, buf: &mut Buffer) {
+        let horizontal =
+            Layout::horizontal([Constraint::Percentage(15), Constraint::Percentage(85)]);
+        let [expressions_area, sentences_area] = horizontal.areas(area);
+
+        let words: Vec<ListItem> = self
+            .expressions
+            .iter()
+            .enumerate()
+            .map(|(i, word)| word.to_list_item(i))
+            .collect();
+
+        let words = List::new(words)
+            .block(
+                Block::bordered()
+                    .title("Expressions")
+                    .style(match self.select_mode {
+                        SelectMode::Expressions => Style::default().yellow().bold(),
+                        SelectMode::Sentences => Style::default(),
+                    }),
+            )
+            .highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::REVERSED)
+                    .fg(Color::White),
+            )
+            .highlight_symbol("► ")
+            .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
+
+        StatefulWidget::render(words, expressions_area, buf, &mut self.expressions_state);
     }
 }
