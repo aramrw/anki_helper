@@ -46,6 +46,11 @@ impl AppState {
 
 impl AppState {
     pub fn run(&mut self, mut term: Terminal<impl Backend>) -> io::Result<()> {
+        match self.read_words_file() {
+            Ok(_) => {}
+            Err(err) => self.err_msg = Some(format!("Error Reading `words.txt`: {}", err)),
+        }
+
         loop {
             self.draw(&mut term)?;
 
