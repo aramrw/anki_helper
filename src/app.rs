@@ -33,6 +33,14 @@ pub(crate) struct AppState {
 impl AppState {
     pub fn new() -> Self {
         Self { /* add variables to AppState struct */ }
+    pub(crate) fn new() -> Self {
+        Self {
+            expressions: vec![],
+            expressions_state: ListState::default(),
+            selected_expression: Some(0),
+            select_mode: SelectMode::Expressions,
+            err_msg: None,
+        }
     }
 }
 
