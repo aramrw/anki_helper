@@ -64,7 +64,7 @@ struct Example {
     sentence_with_furigana: String,
     sound_begin: StringOru64,
     sound_end: StringOru64,
-    sound_url: Option<String>,
+    sound_url: String,
     tags: Vec<String>,
     timestamp: Option<String>,
     translation: String,
@@ -110,7 +110,9 @@ impl AppState {
 
         for item in resp.data {
             for ex in item.examples {
-                sentences.push(Sentence::from(ex.sentence));
+                if let Some(image_url) = ex.image_url {
+                    sentences.push(Sentence::from(ex.sentence, image_url, ex.sound_url));
+                }
             }
         }
 
