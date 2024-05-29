@@ -56,15 +56,14 @@ impl Widget for &mut AppState {
             ),
         };
 
+    fn rend_err(&self, area: Rect, buf: &mut Buffer) {
+        let (msg, style) = match &self.err_msg {
+            Some(msg) => (msg.clone(), Style::default().light_red().bold()),
+            None => (
+                "No Errors :)".to_string(),
+                Style::default().light_green().bold(),
+            ),
         };
-            ",
-        )
-        .block(
-            Block::bordered()
-                .title("Delete Me!")
-                .padding(Padding::new(1, 1, 1, 1)),
-        )
-        .fg(Color::Red)
-        .render(main, buf);
+
     }
 }
