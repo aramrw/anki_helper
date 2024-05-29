@@ -1,6 +1,7 @@
 use ratatui::{
     prelude::*,
     widgets::{Block, List, ListItem, Padding, Paragraph},
+    widgets::{Block, List, ListItem, /* Padding */ Paragraph},
 };
 
 use crate::app::{AppState, SelectMode};
@@ -16,10 +17,34 @@ impl Widget for &mut AppState {
 
         self.rend_help_area(help_area, buf);
         self.rend_main(main_area, buf);
+        self.rend_info_area(info_area, buf)
     }
 }
 
 impl AppState {
+    fn rend_info_area(&self, area: Rect, buf: &mut Buffer) {
+        let horizontal = Layout::horizontal([
+            Constraint::Percentage(30),
+            Constraint::Percentage(30),
+            Constraint::Percentage(30),
+        ]);
+
+        let [msg_area, found_area, _other] = horizontal.areas(area);
+
+        let (msg, style) = match &self.info.msg {
+            Some(msg) => (msg.clone(), Style::default()),
+            None => (
+                format!("Words: [{}]", self.expressions.len()),
+                Style::default(),
+            ),
+        };
+
+        let text = Text::from(Line::from(msg).patch_style(style));
+        Paragraph::new(text)
+            .block(Block::bordered().title("Information"))
+            .render(msg_area, buf);
+    }
+
     fn rend_help_area(&self, area: Rect, buf: &mut Buffer) {
         let horizontal =
             Layout::horizontal([Constraint::Percentage(40), Constraint::Percentage(60)]);
