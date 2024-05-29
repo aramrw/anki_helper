@@ -16,6 +16,7 @@ impl AppState {
                 _ => {}
             },
             SelectMode::Sentences if key.kind == KeyEventKind::Press => match key.code {
+                KeyCode::Char('P') => self.play_audio().await,
                 KeyCode::Esc => self.select_mode = SelectMode::Expressions,
                 KeyCode::Up => self.select_prev_sentence(),
                 KeyCode::Down => self.select_next_sentence(),
