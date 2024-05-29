@@ -78,6 +78,11 @@ impl AppState {
     }
 }
 
+impl Sentence {
+    pub fn from(sentence: String) -> Self {
+        Self { sentence }
+    }
+
 impl Expression {
     pub fn from(dict_word: String, sentences: Option<Vec<Sentence>>) -> Self {
         Self {
