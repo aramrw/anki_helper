@@ -18,6 +18,8 @@ pub struct Info {
 #[derive(Clone)]
 pub(crate) struct Sentence {
     pub sentence: String,
+    pub audio_url: String,
+    pub img_url: Option<String>,
 }
 
 pub(crate) struct Expression {
@@ -78,8 +80,12 @@ impl AppState {
 }
 
 impl Sentence {
-    pub fn from(sentence: String) -> Self {
-        Self { sentence }
+    pub fn from(sentence: String, audio_url: String, img_url: String) -> Self {
+        Self { 
+            sentence,
+            audio_url,
+            img_url: Some(img_url)
+        }
     }
 
     pub fn to_list_item(&self, i: usize) -> ListItem {
