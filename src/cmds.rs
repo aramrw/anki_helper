@@ -1,7 +1,7 @@
+use crate::app::*;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
-
-use crate::app::*;
+use std::{thread, time::*};
 
 impl AppState {
     pub fn read_words_file(&mut self) -> io::Result<()> {
@@ -20,35 +20,30 @@ impl AppState {
         Ok(())
     }
 
-    pub fn select_prev_exp(&mut self) {
-        let i = match self.expressions_state.selected() {
-            Some(i) => {
-                if i == 0 {
-                    self.expressions.len() - 1
-                } else {
-                    i - 1
+    pub async fn fetch_sentences(&mut self) {
+        if let Some(i) = self.selected_expression {
+            if let Some(sentences) = &self.expressions[i].sentences {
+                if !sentences.is_empty() {
+                    return;
+                };
+            }
+            let current_word = self.expressions[i].dict_word.clone();
+            let instant = Instant::now();
+            match self.fetch_api(current_word.clone(), i).await {
+                Ok(_) => {
+                    self.err_msg = None;
+                    self.info.msg = format!(
+                        "Fetched sentences for {} in {}s",
+                        &current_word,
+                        instant.elapsed().as_secs()
+                    )
+                    .into()
+                }
+                Err(err) => {
+                    self.err_msg = Some(format!("Error Fetching {}: {}", &current_word, err));
+                    self.info.msg = None;
                 }
             }
-            None => self.selected_expression.unwrap_or(0),
-        };
-
-        self.selected_expression = Some(i);
-        self.expressions_state.select(Some(i));
-    }
-
-    pub fn select_next_exp(&mut self) {
-        let i = match self.expressions_state.selected() {
-            Some(i) => {
-                if i == self.expressions.len() - 1 {
-                    0
-                } else {
-                    i + 1
-                }
-            }
-            None => self.selected_expression.unwrap_or(0),
-        };
-
-        self.selected_expression = Some(i);
-        self.expressions_state.select(Some(i));
+        }
     }
 }
