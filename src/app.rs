@@ -40,17 +40,17 @@ pub(crate) struct AppState {
 impl AppState {
     pub(crate) fn new() -> Self {
         Self {
-            expressions: vec![],
+            expressions: Vec::new(),
             expressions_state: ListState::default(),
             selected_expression: Some(0),
             select_mode: SelectMode::Expressions,
             err_msg: None,
+            info: Info::default(),
         }
     }
 }
 
 impl AppState {
-    pub fn run(&mut self, mut term: Terminal<impl Backend>) -> io::Result<()> {
     pub async fn run(&mut self, mut term: Terminal<impl Backend>) -> io::Result<()> {
         match self.read_words_file() {
             Ok(_) => {}
@@ -66,7 +66,6 @@ impl AppState {
                     return Ok(());
                 }
                 // src/keybinds.rs
-                self.handle_keybinds(key)?
                 self.handle_keybinds(key).await?
             }
         }
@@ -82,6 +81,12 @@ impl Sentence {
     pub fn from(sentence: String) -> Self {
         Self { sentence }
     }
+
+    pub fn to_list_item(&self, i: usize) -> ListItem {
+        let line = Line::styled(format!("{}. {}", i, self.sentence), Color::LightBlue);
+        ListItem::new(line)
+    }
+}
 
 impl Expression {
     pub fn from(dict_word: String, sentences: Option<Vec<Sentence>>) -> Self {
