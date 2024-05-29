@@ -30,6 +30,32 @@ impl Widget for &mut AppState {
     }
 }
 
+    fn rend_keybinds(&self, area: Rect, buf: &mut Buffer) {
+        let (msg, style) = match self.select_mode {
+            SelectMode::Expressions => (
+                vec![
+                    "<Enter> ".yellow().bold(),
+                    "Sentence Selection ".into(),
+                    "<Up> ".yellow().bold(),
+                    "Select Prev ".into(),
+                    "<Down> ".yellow().bold(),
+                    "Select Next".into(),
+                ],
+                Style::default().add_modifier(Modifier::RAPID_BLINK),
+            ),
+            SelectMode::Sentences => (
+                vec![
+                    "<Esc> ".yellow().bold(),
+                    "Word Selection ".into(),
+                    "<Up> ".yellow().bold(),
+                    "Select Prev ".into(),
+                    "<Down> ".yellow().bold(),
+                    "Select Next".into(),
+                ],
+                Style::default().add_modifier(Modifier::RAPID_BLINK),
+            ),
+        };
+
         };
             ",
         )
