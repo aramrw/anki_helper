@@ -1,9 +1,11 @@
 use ratatui::{
     prelude::*,
     widgets::{Block, Padding, Paragraph},
+    widgets::{Block, List, ListItem, Padding, Paragraph},
 };
 
 use crate::app::AppState;
+use crate::app::{AppState, SelectMode};
 
 impl Widget for &mut AppState {
     fn render(self, area: Rect, buf: &mut Buffer) {
