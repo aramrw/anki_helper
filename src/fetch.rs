@@ -6,6 +6,14 @@ use std::fs;
 use std::thread;
 use std::time;
 
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+enum StringOru64 {
+    Empty(String),
+    Number(u64),
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 enum VecStringOrString {
