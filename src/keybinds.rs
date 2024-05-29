@@ -11,6 +11,18 @@ impl AppState {
                     // add keybinds here
                     _ => {}
         }
+        match self.select_mode {
+            SelectMode::Expressions if key.kind == KeyEventKind::Press => match key.code {
+                KeyCode::Down => self.select_next_exp(),
+                KeyCode::Up => self.select_prev_exp(),
+                _ => {},
+            }
+            SelectMode::Sentences if key.kind == KeyEventKind::Press => match key.code {
+                //KeyCode::Down => self.select_next(),
+                _ => {},
+            }
+            _ => {},
+        } 
 
         Ok(())
     }
