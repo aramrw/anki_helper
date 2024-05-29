@@ -1,7 +1,6 @@
 use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind};
 //use ratatui::prelude::*;
 use crate::app::{AppState, SelectMode};
-use std::{io, thread, time::*};
 use std::io;
 
 impl AppState {
@@ -28,19 +27,6 @@ impl AppState {
         Ok(())
     }
 
-    pub async fn fetch_sentences(&mut self) {
-        if let Some(i) = self.selected_expression {
-            let current_word = self.expressions[i].dict_word.clone();
-            let instant = Instant::now();
-            match self.fetch_api(current_word.clone(), i).await {
-                Ok(_) => {
-                    self.err_msg = None;
-                    self.info.msg = format!(
-                        "Fetched sentences for {} in {}s",
-                        &current_word,
-                        instant.elapsed().as_secs()
-                    )
-                    .into()
     pub fn select_prev_sentence(&mut self) {
         if let Some(exp_index) = self.selected_expression {
             let selected_exp = &self.expressions[exp_index];
@@ -63,12 +49,57 @@ impl AppState {
         }
     }
 
-                }
-                Err(err) => {
-                    self.err_msg = Some(format!("Error Fetching {}: {}", &current_word, err));
-                    self.info.msg = None;
-                }
+    pub fn select_next_sentence(&mut self) {
+        if let Some(exp_index) = self.selected_expression {
+            let selected_exp = &self.expressions[exp_index];
+            if let Some(sentences) = &selected_exp.sentences {
+                let sentence_index = match selected_exp.sentences_state.selected() {
+                    Some(i) => {
+                        if i == sentences.len() - 1 {
+                            0
+                        } else {
+                            i + 1
+                        }
+                    }
+                    None => selected_exp.selected_sentence.unwrap_or(0),
+                };
+                self.expressions[exp_index].selected_sentence = Some(sentence_index);
+                self.expressions[exp_index]
+                    .sentences_state
+                    .select(Some(sentence_index));
             }
         }
+    }
+
+    pub fn select_prev_exp(&mut self) {
+        let i = match self.expressions_state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    self.expressions.len() - 1
+                } else {
+                    i - 1
+                }
+            }
+            None => self.selected_expression.unwrap_or(0),
+        };
+
+        self.selected_expression = Some(i);
+        self.expressions_state.select(Some(i));
+    }
+
+    pub fn select_next_exp(&mut self) {
+        let i = match self.expressions_state.selected() {
+            Some(i) => {
+                if i == self.expressions.len() - 1 {
+                    0
+                } else {
+                    i + 1
+                }
+            }
+            None => self.selected_expression.unwrap_or(0),
+        };
+
+        self.selected_expression = Some(i);
+        self.expressions_state.select(Some(i));
     }
 }
