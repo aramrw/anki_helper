@@ -30,6 +30,16 @@ impl Widget for &mut AppState {
     }
 }
 
+impl AppState {
+    fn rend_help_area(&self, area: Rect, buf: &mut Buffer) {
+        let horizontal =
+            Layout::horizontal([Constraint::Percentage(40), Constraint::Percentage(60)]);
+        let [left, right] = horizontal.areas(area);
+
+        self.rend_keybinds(left, buf);
+        self.rend_err(right, buf);
+    }
+
     fn rend_keybinds(&self, area: Rect, buf: &mut Buffer) {
         let (msg, style) = match self.select_mode {
             SelectMode::Expressions => (
@@ -56,6 +66,12 @@ impl Widget for &mut AppState {
             ),
         };
 
+        let text = Text::from(Line::from(msg).patch_style(style));
+        Paragraph::new(text)
+            .block(Block::bordered().title("Keybinds"))
+            .render(area, buf);
+    }
+
     fn rend_err(&self, area: Rect, buf: &mut Buffer) {
         let (msg, style) = match &self.err_msg {
             Some(msg) => (msg.clone(), Style::default().light_red().bold()),
@@ -64,6 +80,12 @@ impl Widget for &mut AppState {
                 Style::default().light_green().bold(),
             ),
         };
+
+        let text = Text::from(Line::from(msg).patch_style(style));
+        Paragraph::new(text)
+            .block(Block::bordered().title("Errors"))
+            .render(area, buf);
+    }
 
     }
 }
