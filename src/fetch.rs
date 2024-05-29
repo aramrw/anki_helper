@@ -6,6 +6,14 @@ use std::fs;
 use std::thread;
 use std::time;
 
+#[derive(Serialize, Deserialize, Debug)]
+struct Glossary {
+    glossary_list: Vec<String>,
+    headword: String,
+    reading: String,
+    sound: Option<String>,
+    tags: String,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
