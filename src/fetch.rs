@@ -44,10 +44,8 @@ enum StringOru64 {
 #[serde(untagged)]
 enum VecStringOrString {
     Empty(String),
-    Vec(Vec<String>)
-} 
-
-
+    Vec(Vec<String>),
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Example {
