@@ -18,6 +18,18 @@ impl Widget for &mut AppState {
             .block(Block::bordered().title(\"Delete Me!\"))
             .fg(Color::Red)
             .render(main, buf)
+        let layout = Layout::vertical([
+            Constraint::Length(3),
+            Constraint::Min(10),
+            Constraint::Length(3),
+        ]);
+        let [help_area, main_area, info_area] = layout.areas(area);
+
+        self.rend_help_area(help_area, buf);
+        self.rend_main(main_area, buf);
+    }
+}
+
         };
             ",
         )
