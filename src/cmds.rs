@@ -31,6 +31,8 @@ impl AppState {
             }
             None => self.selected_expression.unwrap_or(0),
         };
+
+        self.selected_expression = Some(i);
         self.expressions_state.select(Some(i));
     }
 
@@ -46,6 +48,7 @@ impl AppState {
             None => self.selected_expression.unwrap_or(0),
         };
 
+        self.selected_expression = Some(i);
         self.expressions_state.select(Some(i));
     }
 }
