@@ -4,6 +4,7 @@ mod app;
 mod ui;
 mod keybinds;
 mod cmds;
+mod fetch;
 
 use std::{error::Error, io::stdout};
 use color_eyre::config::HookBuilder;
@@ -13,10 +14,11 @@ use crossterm::{
 };
 use ratatui::prelude::*;
 
-fn main() -> Result<(), Box<dyn Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
     init_error_hooks()?;
     let term = init_terminal()?;
-    app::AppState::new().run(term)?;
+    app::AppState::new().run(term).await?;
 
     restore_terminal()?;
     Ok(())
