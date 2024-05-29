@@ -3,6 +3,7 @@
 mod app;
 mod ui;
 mod keybinds;
+mod cmds;
 
 use std::{error::Error, io::stdout};
 use color_eyre::config::HookBuilder;
