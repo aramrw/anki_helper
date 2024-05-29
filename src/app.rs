@@ -3,6 +3,13 @@ use ratatui::prelude::*;
 use std::io;
 
 pub struct AppState {}
+#[derive(Default)]
+pub enum SelectMode {
+    #[default]
+    Expressions,
+    Sentences,
+}
+
 
 impl AppState {
     pub fn new() -> Self {
