@@ -41,6 +41,28 @@ impl AppState {
                         instant.elapsed().as_secs()
                     )
                     .into()
+    pub fn select_prev_sentence(&mut self) {
+        if let Some(exp_index) = self.selected_expression {
+            let selected_exp = &self.expressions[exp_index];
+            if let Some(sentences) = &selected_exp.sentences {
+                let sentence_index = match selected_exp.sentences_state.selected() {
+                    Some(i) => {
+                        if i == 0 {
+                            sentences.len() - 1
+                        } else {
+                            i - 1
+                        }
+                    }
+                    None => selected_exp.selected_sentence.unwrap_or(0),
+                };
+                self.expressions[exp_index].selected_sentence = Some(sentence_index);
+                self.expressions[exp_index]
+                    .sentences_state
+                    .select(Some(sentence_index));
+            }
+        }
+    }
+
                 }
                 Err(err) => {
                     self.err_msg = Some(format!("Error Fetching {}: {}", &current_word, err));
