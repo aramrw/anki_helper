@@ -1,6 +1,5 @@
 use ratatui::{
     prelude::*,
-    widgets::{Block, List, ListItem, Padding, Paragraph},
     widgets::{Block, List, ListItem, /* Padding */ Paragraph},
 };
 
@@ -106,32 +105,6 @@ impl AppState {
             Layout::horizontal([Constraint::Percentage(15), Constraint::Percentage(85)]);
         let [expressions_area, sentences_area] = horizontal.areas(area);
 
-        let words: Vec<ListItem> = self
-            .expressions
-            .iter()
-            .enumerate()
-            .map(|(i, word)| word.to_list_item(i))
-            .collect();
-
-        let words = List::new(words)
-            .block(
-                Block::bordered()
-                    .title("Expressions")
-                    .style(match self.select_mode {
-                        SelectMode::Expressions => Style::default().yellow().bold(),
-                        SelectMode::Sentences => Style::default(),
-                    }),
-            )
-            .highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .add_modifier(Modifier::REVERSED)
-                    .fg(Color::White),
-            )
-            .highlight_symbol("⇢ ")
-            .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
-
-        StatefulWidget::render(words, expressions_area, buf, &mut self.expressions_state);
         {
             let words: Vec<ListItem> = self
                 .expressions
@@ -161,5 +134,42 @@ impl AppState {
             StatefulWidget::render(words, expressions_area, buf, &mut self.expressions_state);
         }
 
+        let mut sentence_items: Vec<ListItem> = Vec::new();
+
+        if let Some(i) = self.selected_expression {
+            let sentences = &self.expressions[i].sentences.clone();
+            if let Some(sentences) = sentences {
+                sentence_items = sentences
+                    .iter()
+                    .enumerate()
+                    .map(|(i, sentence)| sentence.to_list_item(i))
+                    .collect();
+            };
+
+            let sentences = List::new(sentence_items)
+                .block(
+                    Block::bordered()
+                        .title(format!("{}'s Sentences", &self.expressions[i].dict_word.clone()))
+                        .style(match self.select_mode {
+                            SelectMode::Expressions => Style::default(),
+                            SelectMode::Sentences => Style::default().yellow().bold(),
+                        }),
+                )
+                .highlight_style(
+                    Style::default()
+                        .add_modifier(Modifier::BOLD)
+                        .add_modifier(Modifier::REVERSED)
+                        .fg(Color::White),
+                )
+                .highlight_symbol("⇢ ")
+                .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
+
+            StatefulWidget::render(
+                sentences,
+                sentences_area,
+                buf,
+                &mut self.expressions[i].sentences_state,
+            );
+        }
     }
 }
