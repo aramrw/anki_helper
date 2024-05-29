@@ -20,3 +20,17 @@ impl AppState {
         Ok(())
     }
 
+    pub fn select_prev_exp(&mut self) {
+        let i = match self.expressions_state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    self.expressions.len() - 1
+                } else {
+                    i - 1
+                }
+            }
+            None => self.selected_expression.unwrap_or(0),
+        };
+        self.expressions_state.select(Some(i));
+    }
+
