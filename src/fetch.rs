@@ -6,6 +6,16 @@ use std::fs;
 use std::thread;
 use std::time;
 
+
+#[derive(Serialize, Deserialize, Debug)]
+struct DeckCount {
+    anime: HashMap<String, u16>,
+    drama: HashMap<String, u16>,
+    games: HashMap<String, u16>,
+    literature: HashMap<String, u16>,
+    news: HashMap<String, u16>,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct Glossary {
     glossary_list: Vec<String>,
