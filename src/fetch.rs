@@ -6,6 +6,15 @@ use std::fs;
 use std::thread;
 use std::time;
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+enum VecStringOrString {
+    Empty(String),
+    Vec(Vec<String>)
+} 
+
+
+
 #[derive(Serialize, Deserialize, Debug)]
 struct Example {
     author_japanese: Option<String>,
