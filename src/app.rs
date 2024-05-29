@@ -9,8 +9,15 @@ pub enum SelectMode {
     Sentences,
 }
 
+#[derive(Default)]
+pub struct Info {
+    pub msg: Option<String>,
+    pub found: Option<usize>,
+}
+
+#[derive(Clone)]
 pub(crate) struct Sentence {
-    sentence: String,
+    pub sentence: String,
 }
 
 pub(crate) struct Expression {
@@ -27,6 +34,7 @@ pub(crate) struct AppState {
     pub selected_expression: Option<usize>,
     pub select_mode: SelectMode,
     pub err_msg: Option<String>,
+    pub info: Info,
 }
 
 impl AppState {
@@ -43,6 +51,7 @@ impl AppState {
 
 impl AppState {
     pub fn run(&mut self, mut term: Terminal<impl Backend>) -> io::Result<()> {
+    pub async fn run(&mut self, mut term: Terminal<impl Backend>) -> io::Result<()> {
         match self.read_words_file() {
             Ok(_) => {}
             Err(err) => self.err_msg = Some(format!("Error Reading `words.txt`: {}", err)),
@@ -58,6 +67,7 @@ impl AppState {
                 }
                 // src/keybinds.rs
                 self.handle_keybinds(key)?
+                self.handle_keybinds(key).await?
             }
         }
     }
