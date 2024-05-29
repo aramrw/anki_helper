@@ -10,9 +10,10 @@ crossterm = "0.27.0"
 ratatui = "0.26.0"
 color-eyre = "0.6.3"
 tokio = { version = "1.37.0", features = ["full"] }
-reqwest = { version = "0.12", features = ["json", "stream"] }
+reqwest = { version = "0.12", features = ["json", "stream", "blocking"] }
 serde_json = "1.0.117"
 serde = "1.0.203"
 reqwest-streams = { version = "0.5", features=["json", "csv", "protobuf"] }
 futures-util = "0.3"
+rodio = "=0.17.1"
 # headless_chrome = "1.0.10"
