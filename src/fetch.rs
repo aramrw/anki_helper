@@ -92,3 +92,31 @@ struct JsonSchema {
 
 use crate::app::*;
 
+impl AppState {
+    pub async fn fetch_api(
+        &mut self,
+        word: String,
+        index: usize,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let format_url = format!(
+            "https://api.immersionkit.com/look_up_dictionary?keyword={}&sort=shortness",
+            &word
+        );
+        let resp = reqwest::get(&format_url)
+            .await?
+            .json::<JsonSchema>()
+            .await
+            .unwrap();
+
+        let mut sentences: Vec<Sentence> = Vec::new();
+
+        for item in resp.data {
+            for ex in item.examples {
+                sentences.push(Sentence::from(ex.sentence));
+            }
+        }
+
+        self.expressions[index].sentences = Some(sentences);
+        Ok(())
+    }
+}
