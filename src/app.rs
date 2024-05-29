@@ -1,8 +1,7 @@
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
-use ratatui::prelude::*;
+use ratatui::{prelude::*, widgets::*};
 use std::io;
 
-pub struct AppState {}
 #[derive(Default)]
 pub enum SelectMode {
     #[default]
@@ -31,8 +30,6 @@ pub(crate) struct AppState {
 }
 
 impl AppState {
-    pub fn new() -> Self {
-        Self { /* add variables to AppState struct */ }
     pub(crate) fn new() -> Self {
         Self {
             expressions: vec![],
@@ -68,5 +65,21 @@ impl AppState {
     fn draw(&mut self, term: &mut Terminal<impl Backend>) -> io::Result<()> {
         term.draw(|f| f.render_widget(self, f.size()))?;
         Ok(())
+    }
+}
+
+impl Expression {
+    pub fn from(dict_word: String, sentences: Option<Vec<Sentence>>) -> Self {
+        Self {
+            dict_word,
+            sentences,
+            sentences_state: ListState::default(),
+            selected_sentence: Some(0),
+        }
+    }
+
+    pub fn to_list_item(&self, i: usize) -> ListItem {
+        let line = Line::styled(format!("{}. {}", i, self.dict_word), Color::LightBlue);
+        ListItem::new(line)
     }
 }
