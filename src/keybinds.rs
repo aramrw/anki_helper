@@ -1,4 +1,3 @@
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind};
 //use ratatui::prelude::*;
 use crate::app::{AppState, SelectMode};
@@ -21,5 +20,27 @@ impl AppState {
         }
 
         Ok(())
+    }
+
+    pub async fn fetch_sentences(&mut self) {
+        if let Some(i) = self.selected_expression {
+            let current_word = self.expressions[i].dict_word.clone();
+            let instant = Instant::now();
+            match self.fetch_api(current_word.clone(), i).await {
+                Ok(_) => {
+                    self.err_msg = None;
+                    self.info.msg = format!(
+                        "Fetched sentences for {} in {}s",
+                        &current_word,
+                        instant.elapsed().as_secs()
+                    )
+                    .into()
+                }
+                Err(err) => {
+                    self.err_msg = Some(format!("Error Fetching {}: {}", &current_word, err));
+                    self.info.msg = None;
+                }
+            }
+        }
     }
 }
