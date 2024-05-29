@@ -2,18 +2,24 @@ use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind};
 //use ratatui::prelude::*;
 use crate::app::{AppState, SelectMode};
 use std::{io, thread, time::*};
+use std::io;
 
 impl AppState {
     pub async fn handle_keybinds(&mut self, key: KeyEvent) -> io::Result<()> {
         match self.select_mode {
             SelectMode::Expressions if key.kind == KeyEventKind::Press => match key.code {
-                KeyCode::Enter => self.fetch_sentences().await,
+                KeyCode::Enter => {
+                    self.select_mode = SelectMode::Sentences;
+                    self.fetch_sentences().await
+                }
                 KeyCode::Down => self.select_next_exp(),
                 KeyCode::Up => self.select_prev_exp(),
                 _ => {}
             },
             SelectMode::Sentences if key.kind == KeyEventKind::Press => match key.code {
-                //KeyCode::Down => self.select_next(),
+                KeyCode::Esc => self.select_mode = SelectMode::Expressions,
+                KeyCode::Up => self.select_prev_sentence(),
+                KeyCode::Down => self.select_next_sentence(),
                 _ => {}
             },
             _ => {}
