@@ -14,6 +14,13 @@ pub(crate) struct Sentence {
     sentence: String,
 }
 
+pub(crate) struct Expression {
+    pub dict_word: String,
+    pub sentences: Option<Vec<Sentence>>,
+    pub sentences_state: ListState,
+    pub selected_sentence: Option<usize>,
+}
+
 
 impl AppState {
     pub fn new() -> Self {
