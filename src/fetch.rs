@@ -6,6 +6,14 @@ use std::fs;
 use std::thread;
 use std::time;
 
+#[derive(Serialize, Deserialize, Debug)]
+struct CategoryCount {
+    anime: u16,
+    drama: u16,
+    games: u16,
+    literature: u16,
+    news: u16,
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct DeckCount {
@@ -81,3 +89,6 @@ struct Main {
 struct JsonSchema {
     data: Vec<Main>,
 }
+
+use crate::app::*;
+
