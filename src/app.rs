@@ -21,6 +21,14 @@ pub(crate) struct Expression {
     pub selected_sentence: Option<usize>,
 }
 
+#[derive(Default)]
+pub(crate) struct AppState {
+    pub expressions: Vec<Expression>,
+    pub expressions_state: ListState,
+    pub selected_expression: Option<usize>,
+    pub select_mode: SelectMode,
+    pub err_msg: Option<String>,
+}
 
 impl AppState {
     pub fn new() -> Self {
