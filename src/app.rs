@@ -10,6 +10,10 @@ pub enum SelectMode {
     Sentences,
 }
 
+pub(crate) struct Sentence {
+    sentence: String,
+}
+
 
 impl AppState {
     pub fn new() -> Self {
