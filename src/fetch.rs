@@ -109,7 +109,13 @@ impl AppState {
         for item in resp.data {
             for ex in item.examples {
                 if let Some(image_url) = ex.image_url {
-                    sentences.push(Sentence::from(ex.sentence, ex.sound_url, image_url));
+                    sentences.push(Sentence::from(
+                        &ex.sentence,
+                        &ex.sound_url,
+                        None,
+                        &image_url,
+                        &ex.deck_name,
+                    ));
                 }
             }
         }
@@ -131,19 +137,31 @@ impl AppState {
         Ok(())
     }
 
-    pub async fn play_audio(&mut self) {
-        if let Some(sentence) = self.get_current_sentence() {
-            tokio::task::spawn_blocking(move || {
-                let (_stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
-                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-                let resp = reqwest::blocking::get(sentence.audio_url).unwrap();
-                let cursor = Cursor::new(resp.bytes().unwrap());
-                let source = rodio::Decoder::new(cursor).unwrap();
-                sink.append(source);
-                sink.sleep_until_end();
-            })
-            .await
-            .unwrap();
+    pub async fn play_audio(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(exp_index) = self.selected_expression {
+            if let Some(sent_index) = self.expressions[exp_index].selected_sentence {
+                let sentence =
+                    &mut self.expressions[exp_index].sentences.as_mut().unwrap()[sent_index];
+                let audio_data = if let Some(audio_data) = &sentence.audio_data {
+                    audio_data.clone()
+                } else {
+                    let resp = reqwest::get(&sentence.audio_url).await?;
+                    let audio_data = resp.bytes().await?.to_vec();
+                    sentence.audio_data = Some(audio_data.clone());
+                    audio_data
+                };
+                tokio::task::spawn_blocking(move || {
+                    let (_stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
+                    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                    let cursor = Cursor::new(audio_data);
+                    let source = rodio::Decoder::new(cursor).unwrap();
+                    sink.append(source);
+                    sink.sleep_until_end();
+                })
+                .await
+                .unwrap();
+            }
         }
+        Ok(())
     }
 }
