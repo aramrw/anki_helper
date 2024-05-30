@@ -51,6 +51,7 @@ struct ReqResult {
     error: Option<String>,
 }
 
+impl AppState {
     pub async fn update_last_anki_card(&mut self) {
         let client = AnkiClient::default();
 
@@ -74,6 +75,35 @@ struct ReqResult {
                 return;
             }
         };
+
+        let fields: UserNoteFields = match read_config() {
+            Ok(fields) => fields,
+            Err(err) => {
+                self.err_msg = Some(format!("Error Reading Config: {}", err));
+                return;
+            }
+        };
+
+        let sentence: Sentence = match self.get_current_sentence() {
+            Some(sent) => sent,
+            None => {
+                self.err_msg = Some("Error: Failed to Get Current Sentence".to_string());
+                return;
+            }
+        };
+
+        let req: Request = into_update_note_req(card_id as u64, fields, sentence);
+        match post_note_update(req).await {
+            Ok(_) => {
+                self.info.msg = format!("Updated Fields for CardID: {}", &card_id).into();
+            }
+            Err(err) => {
+                self.err_msg = Some(format!("POST Error -> Failed to Update Anki Card: {}", err));
+            }
+        };
+    }
+}
+
 async fn post_note_update(req: Request) -> Result<(), Box<dyn std::error::Error>> {
     let client = reqwest::Client::builder().build()?;
     let res = client
