@@ -21,3 +21,8 @@ struct Media {
     fields: Vec<String>,
 }
 
+#[derive(Serialize, Deserialize)]
+struct UpdateNoteParams {
+    note: Note,
+}
+
