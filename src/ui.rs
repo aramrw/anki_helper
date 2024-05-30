@@ -146,8 +146,9 @@ impl AppState {
             StatefulWidget::render(words, expressions_area, buf, &mut self.expressions_state);
         }
 
-        let mut sentence_items: Vec<ListItem> = Vec::new();
+        // sentences area
 
+        let mut sentence_items: Vec<ListItem> = Vec::new();
         if let Some(i) = self.selected_expression {
             let sentences = &self.expressions[i].sentences.clone();
             if let Some(sentences) = sentences {
@@ -158,6 +159,8 @@ impl AppState {
                     .collect();
             };
 
+            let has_sentences = &sentence_items.is_empty();
+
             let sentences = List::new(sentence_items)
                 .block(
                     Block::bordered()
@@ -165,9 +168,13 @@ impl AppState {
                             "{}'s Sentences",
                             &self.expressions[i].dict_word.clone()
                         ))
-                        .style(match self.select_mode {
-                            SelectMode::Expressions => Style::default(),
-                            SelectMode::Sentences => Style::default().yellow().bold(),
+                        // .style(match self.select_mode {
+                        //     SelectMode::Expressions => Style::default(),
+                        //     SelectMode::Sentences => Style::default().yellow().bold(),
+                        // })
+                        .style(match has_sentences {
+                            true => Style::default().light_red().bold(),
+                            false => Style::default().light_green().bold(),
                         }),
                 )
                 .highlight_style(
