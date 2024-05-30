@@ -26,3 +26,10 @@ struct UpdateNoteParams {
     note: Note,
 }
 
+#[derive(Serialize, Deserialize)]
+struct Request {
+    action: String,
+    version: u8,
+    params: UpdateNoteParams,
+}
+
