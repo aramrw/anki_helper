@@ -62,7 +62,6 @@ struct ReqResult {
 
 impl AppState {
     pub async fn update_last_anki_card(&mut self) {
-        let client = AnkiClient::default();
         let client: AnkiClient<'_> = AnkiClient::default();
 
         if let Some(i) = self.selected_expression {
@@ -127,7 +126,6 @@ fn find_note_from_word(
     }
 }
 
-        let card_id = match client.request(FindCardsRequest {
 fn find_newest_note(client: &AnkiClient, word: &str) -> Result<usize, Box<dyn std::error::Error>> {
     let id_vec = client
         .request(FindNotesRequest {
@@ -140,7 +138,9 @@ fn find_newest_note(client: &AnkiClient, word: &str) -> Result<usize, Box<dyn st
     }
 }
 
-async fn post_note_update(req: Request) -> Result<(), Box<dyn std::error::Error>> {
+async fn post_note_update(
+    req: Request<UpdateNoteParams>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let client = reqwest::Client::builder().build()?;
     let res = client
         .post("http://localhost:8765")
@@ -175,7 +175,11 @@ fn format_sentence_field(field_name: &str, ik_sentence: &str) -> HashMap<String,
     map
 }
 
-fn into_update_note_req(id: u64, anki_fields: UserNoteFields, sentence: Sentence) -> Request {
+fn into_update_note_req(
+    id: u64,
+    anki_fields: UserNoteFields,
+    sentence: Sentence,
+) -> Request<UpdateNoteParams> {
     let sentence_field = format_sentence_field(&anki_fields.sentence, &sentence.sentence);
     let picture: Option<Vec<Media>> = match sentence.img_url {
         Some(img_url) => vec![Media {
@@ -196,7 +200,7 @@ fn into_update_note_req(id: u64, anki_fields: UserNoteFields, sentence: Sentence
 
     let note = Note {
         id,
-        fields: {sentence_field},
+        fields: { sentence_field },
         audio,
         picture,
     };
