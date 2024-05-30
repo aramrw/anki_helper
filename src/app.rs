@@ -77,14 +77,18 @@ impl AppState {
         term.draw(|f| f.render_widget(self, f.size()))?;
         Ok(())
     }
+
+    pub fn update_error_msg(&mut self, title: &str, err: String) {
+        self.err_msg = Some(format!("{}: {}", title, err));
+    }
 }
 
 impl Sentence {
     pub fn from(sentence: String, audio_url: String, img_url: String) -> Self {
-        Self { 
+        Self {
             sentence,
             audio_url,
-            img_url: Some(img_url)
+            img_url: Some(img_url),
         }
     }
 
