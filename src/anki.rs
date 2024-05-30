@@ -93,8 +93,9 @@ impl AppState {
                 }
             };
 
+            let filename = url_into_file_name(&sentence.audio_url.clone());
             let req: Request<UpdateNoteParams> =
-                into_update_note_req(note_id as u64, fields, sentence);
+                into_update_note_req(note_id as u64, fields, sentence, filename);
             match post_note_update(req).await {
                 Ok(_) => {
                     let elapsed = instant.elapsed().as_secs();
@@ -124,10 +125,10 @@ impl AppState {
 
 fn open_note_gui(client: &AnkiClient, id: usize) -> Result<(), Box<dyn std::error::Error>> {
     client.request(GuiEditNoteRequest { note: id })?;
-
     Ok(())
 }
 
+#[allow(dead_code)]
 fn find_note_from_word(
     client: &AnkiClient,
     word: &str,
@@ -192,13 +193,23 @@ fn format_sentence_field(field_name: &str, ik_sentence: &str) -> HashMap<String,
     map
 }
 
+fn write_audio_bytes_file(filename: &str, bytes: &Vec<u8>) -> std::io::Result<String> {
+    let dir = tempfile::tempdir()?;
+    let file_path = dir.path().join(filename);
+    std::fs::write(&file_path, bytes)?;
+    let audio_url = format!("file://{}", &file_path.to_string_lossy());
+
+    Ok(audio_url)
+}
+
 fn into_update_note_req(
     id: u64,
     anki_fields: UserNoteFields,
     sentence: Sentence,
+    filename: String,
 ) -> Request<UpdateNoteParams> {
     let sentence_field = format_sentence_field(&anki_fields.sentence, &sentence.sentence);
-    let picture: Option<Vec<Media>> = match sentence.img_url {
+    let picture: Option<Vec<Media>> = match &sentence.img_url {
         Some(img_url) => vec![Media {
             url: img_url.clone(),
             filename: url_into_file_name(&img_url),
@@ -208,9 +219,10 @@ fn into_update_note_req(
         .into(),
         None => None,
     };
+
     let audio: Vec<Media> = vec![Media {
-        url: sentence.audio_url.clone(),
-        filename: url_into_file_name(&sentence.audio_url.clone()),
+        url: sentence.audio_url,
+        filename,
         skipHash: None,
         fields: vec![anki_fields.sentence_audio.clone()],
     }];
