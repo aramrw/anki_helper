@@ -1,7 +1,6 @@
 use crate::app::*;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
-use std::{/*thread*/ time::*};
 
 impl AppState {
     pub fn get_current_sentence(&mut self) -> Option<Sentence> {
@@ -40,16 +39,8 @@ impl AppState {
                 };
             }
             let current_word = self.expressions[i].dict_word.clone();
-            let instant = Instant::now();
             match self.fetch_api(current_word.clone(), i).await {
                 Ok(_) => {
-                    self.err_msg = None;
-                    self.info.msg = format!(
-                        "Fetched sentences for {} in {}s",
-                        &current_word,
-                        instant.elapsed().as_secs()
-                    )
-                    .into()
                 }
                 Err(err) => {
                     self.err_msg = Some(format!("Error Fetching {}: {}", &current_word, err));
