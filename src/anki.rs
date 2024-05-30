@@ -33,3 +33,8 @@ struct Request {
     params: UpdateNoteParams,
 }
 
+#[derive(Serialize, Deserialize)]
+struct ConfigJson {
+    fields: UserNoteFields,
+}
+
