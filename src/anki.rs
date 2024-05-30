@@ -51,3 +51,11 @@ struct ReqResult {
     error: Option<String>,
 }
 
+
+fn read_config() -> Result<UserNoteFields, std::io::Error> {
+    let config_path = "./config.json";
+    let file = std::fs::File::open(config_path)?;
+    let config: ConfigJson = serde_json::from_reader(file)?;
+
+    Ok(config.fields)
+}
