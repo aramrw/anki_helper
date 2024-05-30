@@ -64,6 +64,21 @@ impl AppState {
     pub async fn update_last_anki_card(&mut self) {
         let client = AnkiClient::default();
 
+fn find_note_from_word(
+    client: &AnkiClient,
+    word: &str,
+) -> Result<usize, Box<dyn std::error::Error>> {
+    let id_vec = client
+        .request(FindNotesRequest {
+            query: word.to_string(),
+        })?
+        .0;
+    match id_vec.last() {
+        Some(id) => Ok(*id),
+        None => Err("No new cards found".into()),
+    }
+}
+
         let card_id = match client.request(FindCardsRequest {
 fn find_newest_note(client: &AnkiClient, word: &str) -> Result<usize, Box<dyn std::error::Error>> {
     let id_vec = client
