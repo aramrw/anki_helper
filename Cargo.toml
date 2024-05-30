@@ -17,4 +17,5 @@ reqwest-streams = { version = "0.5", features=["json", "csv", "protobuf"] }
 futures-util = "0.3"
 rodio = "=0.17.1"
 anki_bridge = { version = "0.8.0", features = ["ureq_blocking"] }
+tempfile = "3.10.1"
 # headless_chrome = "1.0.10"
