@@ -46,8 +46,8 @@ impl AppState {
     fn rend_help_area(&self, area: Rect, buf: &mut Buffer) {
         let horizontal = Layout::horizontal([
             Constraint::Percentage(60),
-            Constraint::Percentage(15),
-            Constraint::Percentage(35),
+            Constraint::Percentage(0),
+            Constraint::Percentage(40),
         ]);
         let [_left, _mid, right] = horizontal.areas(area);
 
@@ -58,23 +58,33 @@ impl AppState {
         let (msg, style) = match self.select_mode {
             SelectMode::Expressions => (
                 vec![
-                    "<Enter> ".yellow().bold(),
-                    "Sentence Selection ".into(),
-                    "<Up> ".yellow().bold(),
-                    "Prev ".into(),
-                    "<Down> ".yellow().bold(),
-                    "Next".into(),
+                    "(".into(),
+                    "<Up> ".light_yellow().bold(),
+                    "Prev ".yellow(),
+                    "| ".into(),
+                    "<Down> ".light_yellow().bold(),
+                    "Next".yellow(),
+                    ") ".into(),
+                    "<Enter> ".light_green().bold(),
+                    "Sentence Selection ".green(),
                 ],
                 Style::default().add_modifier(Modifier::RAPID_BLINK),
             ),
             SelectMode::Sentences => (
                 vec![
-                    "<Esc> ".yellow().bold(),
-                    "Word Selection ".into(),
-                    "<Up> ".yellow().bold(),
-                    "Prev ".into(),
-                    "<Down> ".yellow().bold(),
-                    "Next".into(),
+                    "<Esc> ".light_red().bold(),
+                    "Back ".red(),
+                    "(".into(),
+                    "<Up> ".light_yellow().bold(),
+                    "Prev ".yellow(),
+                    "| ".into(),
+                    "<Down> ".light_yellow().bold(),
+                    "Next ".yellow(),
+                    ") ".into(),
+                    "<P> ".light_blue().bold(),
+                    "Play Audio ".blue(),
+                    "<C> ".light_green().bold(),
+                    "Update Card".green(),
                 ],
                 Style::default().add_modifier(Modifier::RAPID_BLINK),
             ),
