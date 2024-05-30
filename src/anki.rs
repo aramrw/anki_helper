@@ -51,6 +51,29 @@ struct ReqResult {
     error: Option<String>,
 }
 
+    pub async fn update_last_anki_card(&mut self) {
+        let client = AnkiClient::default();
+
+        let card_id = match client.request(FindCardsRequest {
+            query: "is:new".to_string(),
+        }) {
+            Ok(res) => {
+                let id = match res.last().copied() {
+                    Some(id) => id,
+                    None => {
+                        self.err_msg = Some(
+                            "Error: Failed to Fetch Card ID\n    -> No Cards Found...".to_string(),
+                        );
+                        return;
+                    }
+                };
+                id
+            }
+            Err(err) => {
+                self.err_msg = Some(format!("Error Making Card: {}", err));
+                return;
+            }
+        };
 async fn post_note_update(req: Request) -> Result<(), Box<dyn std::error::Error>> {
     let client = reqwest::Client::builder().build()?;
     let res = client
