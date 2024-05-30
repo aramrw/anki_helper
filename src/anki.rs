@@ -61,6 +61,39 @@ fn format_sentence_field(field_name: &str, ik_sentence: &str) -> HashMap<String,
     map
 }
 
+fn into_update_note_req(id: u64, anki_fields: UserNoteFields, sentence: Sentence) -> Request {
+    let sentence_field = format_sentence_field(&anki_fields.sentence, &sentence.sentence);
+    let picture: Option<Vec<Media>> = match sentence.img_url {
+        Some(img_url) => vec![Media {
+            url: img_url.clone(),
+            filename: url_into_file_name(&img_url),
+            skipHash: None,
+            fields: vec![anki_fields.image.clone()],
+        }]
+        .into(),
+        None => None,
+    };
+    let audio: Vec<Media> = vec![Media {
+        url: sentence.audio_url.clone(),
+        filename: url_into_file_name(&sentence.audio_url.clone()),
+        skipHash: None,
+        fields: vec![anki_fields.sentence_audio.clone()],
+    }];
+
+    let note = Note {
+        id,
+        fields: {sentence_field},
+        audio,
+        picture,
+    };
+    let params = UpdateNoteParams { note };
+
+    Request {
+        action: "updateNoteFields".to_string(),
+        version: 6,
+        params,
+    }
+}
 
 fn read_config() -> Result<UserNoteFields, std::io::Error> {
     let config_path = "./config.json";
