@@ -93,7 +93,7 @@ impl Sentence {
     }
 
     pub fn to_list_item(&self, i: usize) -> ListItem {
-        let line = Line::styled(format!("{}. {}", i, self.sentence), Color::LightBlue);
+        let line = Line::styled(format!("{}. {}", i, self.sentence), Color::White);
         ListItem::new(line)
     }
 }
@@ -109,7 +109,7 @@ impl Expression {
     }
 
     pub fn to_list_item(&self, i: usize) -> ListItem {
-        let line = Line::styled(format!("{}. {}", i, self.dict_word), Color::LightBlue);
+        let line = Line::styled(format!("{}. {}", i, self.dict_word), Color::White);
         ListItem::new(line)
     }
 }
