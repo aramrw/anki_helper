@@ -78,6 +78,7 @@ impl AppState {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn update_error_msg(&mut self, title: &str, err: String) {
         self.err_msg = Some(format!("{}: {}", title, err));
     }
