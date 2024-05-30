@@ -4,6 +4,7 @@ use anki_bridge::notes_actions::find_notes::FindNotesRequest;
 use anki_bridge::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::time::Instant;
 
 #[derive(Serialize, Deserialize)]
 struct Note {
@@ -62,6 +63,7 @@ struct ReqResult {
 
 impl AppState {
     pub async fn update_last_anki_card(&mut self) {
+        let instant = Instant::now();
         let client: AnkiClient<'_> = AnkiClient::default();
 
         if let Some(i) = self.selected_expression {
@@ -69,15 +71,13 @@ impl AppState {
 
             let note_id = match find_note_from_word(&client, current_word) {
                 Ok(id) => id,
-                Err(_) => {
-                    match find_newest_note(&client, current_word) {
-                        Ok(id) => id,
-                        Err(err) => {
-                            self.err_msg = Some(format!("Error Finding Card: {}", err));
-                            return;
-                        }
+                Err(_) => match find_newest_note(&client) {
+                    Ok(id) => id,
+                    Err(err) => {
+                        self.err_msg = Some(format!("Error Finding Card: {}", err));
+                        return;
                     }
-                }
+                },
             };
 
             let fields: UserNoteFields = match read_config() {
@@ -100,11 +100,16 @@ impl AppState {
                 into_update_note_req(note_id as u64, fields, sentence);
             match post_note_update(req).await {
                 Ok(_) => {
-                    self.info.msg = format!("Updated Fields for CardID: {}", &note_id).into();
+                    let elapsed = instant.elapsed().as_secs();
+                    self.info.msg =
+                        format!("Updated Fields for CardID: {} in {}s", &note_id, elapsed).into();
                 }
                 Err(err) => {
-                    self.err_msg =
-                        Some(format!("POST Error -> Failed to Update Anki Card: {}", err));
+                    let elapsed = instant.elapsed().as_secs();
+                    self.err_msg = Some(format!(
+                        "POST Error -> Failed to Update Anki Card: {} after {}s",
+                        err, elapsed
+                    ));
                 }
             };
         }
@@ -126,7 +131,7 @@ fn find_note_from_word(
     }
 }
 
-fn find_newest_note(client: &AnkiClient, word: &str) -> Result<usize, Box<dyn std::error::Error>> {
+fn find_newest_note(client: &AnkiClient) -> Result<usize, Box<dyn std::error::Error>> {
     let id_vec = client
         .request(FindNotesRequest {
             query: "is:new".to_string(),
