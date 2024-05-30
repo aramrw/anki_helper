@@ -5,6 +5,7 @@ mod ui;
 mod keybinds;
 mod cmds;
 mod fetch;
+mod anki;
 
 use std::{error::Error, io::stdout};
 use color_eyre::config::HookBuilder;
