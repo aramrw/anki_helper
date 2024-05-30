@@ -51,6 +51,10 @@ struct ReqResult {
     error: Option<String>,
 }
 
+fn url_into_file_name(url: &str) -> String {
+    url.rsplit_once('/').unwrap().1.to_string()
+}
+
 
 fn read_config() -> Result<UserNoteFields, std::io::Error> {
     let config_path = "./config.json";
