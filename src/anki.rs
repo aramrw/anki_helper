@@ -65,51 +65,15 @@ impl AppState {
         let client = AnkiClient::default();
 
         let card_id = match client.request(FindCardsRequest {
+fn find_newest_note(client: &AnkiClient, word: &str) -> Result<usize, Box<dyn std::error::Error>> {
+    let id_vec = client
+        .request(FindNotesRequest {
             query: "is:new".to_string(),
-        }) {
-            Ok(res) => {
-                let id = match res.last().copied() {
-                    Some(id) => id,
-                    None => {
-                        self.err_msg = Some(
-                            "Error: Failed to Fetch Card ID\n    -> No Cards Found...".to_string(),
-                        );
-                        return;
-                    }
-                };
-                id
-            }
-            Err(err) => {
-                self.err_msg = Some(format!("Error Making Card: {}", err));
-                return;
-            }
-        };
-
-        let fields: UserNoteFields = match read_config() {
-            Ok(fields) => fields,
-            Err(err) => {
-                self.err_msg = Some(format!("Error Reading Config: {}", err));
-                return;
-            }
-        };
-
-        let sentence: Sentence = match self.get_current_sentence() {
-            Some(sent) => sent,
-            None => {
-                self.err_msg = Some("Error: Failed to Get Current Sentence".to_string());
-                return;
-            }
-        };
-
-        let req: Request = into_update_note_req(card_id as u64, fields, sentence);
-        match post_note_update(req).await {
-            Ok(_) => {
-                self.info.msg = format!("Updated Fields for CardID: {}", &card_id).into();
-            }
-            Err(err) => {
-                self.err_msg = Some(format!("POST Error -> Failed to Update Anki Card: {}", err));
-            }
-        };
+        })?
+        .0;
+    match id_vec.last() {
+        Some(id) => Ok(*id),
+        None => Err("ID for {} card not found".into()),
     }
 }
 
