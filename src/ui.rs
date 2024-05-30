@@ -127,7 +127,7 @@ impl AppState {
 
     fn rend_main(&mut self, area: Rect, buf: &mut Buffer) {
         let horizontal =
-            Layout::horizontal([Constraint::Percentage(15), Constraint::Percentage(85)]);
+            Layout::horizontal([Constraint::Percentage(15), Constraint::Percentage(60)]);
         let [expressions_area, sentences_area] = horizontal.areas(area);
 
         {
@@ -143,7 +143,7 @@ impl AppState {
                     Block::bordered()
                         .title("Expressions")
                         .style(match self.select_mode {
-                            SelectMode::Expressions => Style::default().yellow().bold(),
+                            SelectMode::Expressions => Style::default().light_yellow().bold(),
                             SelectMode::Sentences => Style::default(),
                         }),
                 )
@@ -152,9 +152,9 @@ impl AppState {
                         .add_modifier(Modifier::BOLD)
                         .add_modifier(Modifier::REVERSED)
                         .fg(Color::White),
-                )
-                .highlight_symbol("⇢ ")
-                .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
+                );
+            //.highlight_symbol("⇢ ");
+            //.highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
 
             StatefulWidget::render(words, expressions_area, buf, &mut self.expressions_state);
         }
@@ -183,7 +183,13 @@ impl AppState {
                         ))
                         .style(match has_sentences {
                             true => Style::default().light_red().bold(),
-                            false => Style::default().light_green().bold(),
+                            false => {
+                                match self.select_mode {
+                                    SelectMode::Expressions => Style::default().light_green().bold(),
+                                    SelectMode::Sentences => Style::default().light_yellow().bold(),
+                                }
+                                
+                            }
                         }),
                 )
                 .highlight_style(
@@ -191,9 +197,9 @@ impl AppState {
                         .add_modifier(Modifier::BOLD)
                         .add_modifier(Modifier::REVERSED)
                         .fg(Color::White),
-                )
-                .highlight_symbol("⇢ ")
-                .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
+                );
+            //.highlight_symbol("⇢ ");
+            //.highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
 
             StatefulWidget::render(
                 sentences,
