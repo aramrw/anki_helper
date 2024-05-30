@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Cursor;
+use std::time::Instant;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct CategoryCount {
@@ -92,6 +93,7 @@ impl AppState {
         word: String,
         index: usize,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        let instant = Instant::now();
         let format_url = format!(
             "https://api.immersionkit.com/look_up_dictionary?keyword={}&sort=shortness",
             &word
@@ -112,7 +114,20 @@ impl AppState {
             }
         }
 
+        if sentences.is_empty() {
+            self.select_mode = SelectMode::Expressions;
+            self.info.msg = format!("No Sentences found for {}", &word).into();
+            return Ok(());
+        }
+
         self.expressions[index].sentences = Some(sentences);
+        self.err_msg = None;
+        self.info.msg = format!(
+            "Fetched sentences for {} in {}s",
+            &word,
+            instant.elapsed().as_secs()
+        )
+        .into();
         Ok(())
     }
 
