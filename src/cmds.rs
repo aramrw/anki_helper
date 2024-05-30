@@ -1,12 +1,21 @@
 use crate::app::*;
-use reqwest::Error;
-use rodio::Source;
 use std::fs::File;
-use std::io::Cursor;
 use std::io::{self, prelude::*, BufReader};
-use std::{thread, time::*};
+use std::{/*thread*/ time::*};
 
 impl AppState {
+    pub fn get_current_sentence(&mut self) -> Option<Sentence> {
+        if let Some(exp_index) = self.selected_expression {
+            let expression = &self.expressions[exp_index];
+            if let Some(sentence_index) = expression.selected_sentence {
+                if let Some(sentences) = &expression.sentences {
+                    return Some(sentences[sentence_index].clone());
+                }
+            }
+        }
+        None
+    }
+
     pub fn read_words_file(&mut self) -> io::Result<()> {
         let file = File::open("words.txt")?;
         let reader = BufReader::new(file);
@@ -21,31 +30,6 @@ impl AppState {
         }
 
         Ok(())
-    }
-
-    pub async fn play_audio(&self) {
-        if let Some(i) = self.selected_expression {
-            let current_exp = &self.expressions[i];
-            if let Some(sentences) = &current_exp.sentences {
-                if let Some(sent_i) = current_exp.selected_sentence {
-                    if let Some(url) = &sentences[sent_i].img_url {
-                        let url = url.clone();
-                        tokio::task::spawn_blocking(move || {
-                            let (_stream, stream_handle) =
-                                rodio::OutputStream::try_default().unwrap();
-                            let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-                            let resp = reqwest::blocking::get(url).unwrap();
-                            let cursor = Cursor::new(resp.bytes().unwrap());
-                            let source = rodio::Decoder::new(cursor).unwrap();
-                            sink.append(source);
-                            sink.sleep_until_end();
-                        })
-                        .await
-                        .unwrap();
-                    }
-                }
-            }
-        }
     }
 
     pub async fn fetch_sentences(&mut self) {
