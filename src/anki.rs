@@ -51,6 +51,31 @@ struct ReqResult {
     error: Option<String>,
 }
 
+async fn post_note_update(req: Request) -> Result<(), Box<dyn std::error::Error>> {
+    let client = reqwest::Client::builder().build()?;
+    let res = client
+        .post("http://localhost:8765")
+        .json(&req)
+        .send()
+        .await?;
+
+    let res: ReqResult = res.json().await?;
+
+    match res {
+        ReqResult {
+            result: Some(_),
+            error: None,
+        } => {}
+        ReqResult {
+            result: None,
+            error: Some(err),
+        } => return Err(err.into()),
+        _ => return Ok(()),
+    }
+
+    Ok(())
+}
+
 fn url_into_file_name(url: &str) -> String {
     url.rsplit_once('/').unwrap().1.to_string()
 }
