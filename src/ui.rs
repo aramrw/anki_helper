@@ -49,7 +49,7 @@ impl AppState {
             Constraint::Percentage(15),
             Constraint::Percentage(35),
         ]);
-        let [left, mid, right] = horizontal.areas(area);
+        let [_left, _mid, right] = horizontal.areas(area);
 
         self.rend_keybinds(right, buf);
     }
