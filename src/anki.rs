@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 use crate::app::*;
+use anki_bridge::notes_actions::find_notes::FindNotesRequest;
 use anki_bridge::prelude::*;
-use reqwest;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -27,12 +27,21 @@ struct UpdateNoteParams {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Request {
-    action: String,
-    version: u8,
-    params: UpdateNoteParams,
+struct FindNotesParams {
+    query: String,
 }
 
+trait AnkiParams {}
+impl AnkiParams for UpdateNoteParams {}
+
+#[derive(Serialize, Deserialize)]
+struct Request<P: AnkiParams> {
+    action: String,
+    version: u8,
+    params: P,
+}
+
+// other
 #[derive(Serialize, Deserialize)]
 struct ConfigJson {
     fields: UserNoteFields,
