@@ -19,7 +19,9 @@ pub struct Info {
 pub(crate) struct Sentence {
     pub sentence: String,
     pub audio_url: String,
+    pub audio_data: Option<Vec<u8>>,
     pub img_url: Option<String>,
+    pub media_title: String, 
 }
 
 pub(crate) struct Expression {
@@ -85,11 +87,29 @@ impl AppState {
 }
 
 impl Sentence {
-    pub fn from(sentence: String, audio_url: String, img_url: String) -> Self {
-        Self {
-            sentence,
-            audio_url,
-            img_url: Some(img_url),
+    pub fn from(
+        sentence: &str,
+        audio_url: &str,
+        audio_data: Option<Vec<u8>>,
+        img_url: &str,
+        media_title: &str
+    ) -> Self {
+        if let Some(data_vec) = audio_data {
+            Self {
+                sentence: sentence.to_string(),
+                audio_url: audio_url.to_string(),
+                audio_data: Some(data_vec),
+                img_url: Some(img_url.to_string()),
+                media_title: media_title.to_string(),
+            }
+        } else {
+            Self {
+                sentence: sentence.to_string(),
+                audio_url: audio_url.to_string(),
+                audio_data: None,
+                img_url: Some(img_url.to_string()),
+                media_title: media_title.to_string(),
+            }
         }
     }
 
