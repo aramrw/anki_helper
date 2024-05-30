@@ -55,6 +55,12 @@ fn url_into_file_name(url: &str) -> String {
     url.rsplit_once('/').unwrap().1.to_string()
 }
 
+fn format_sentence_field(field_name: &str, ik_sentence: &str) -> HashMap<String, String> {
+    let mut map = HashMap::new();
+    map.insert(field_name.to_string(), ik_sentence.to_string());
+    map
+}
+
 
 fn read_config() -> Result<UserNoteFields, std::io::Error> {
     let config_path = "./config.json";
