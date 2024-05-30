@@ -43,15 +43,28 @@ impl AppState {
         self.rend_err(err_area, buf);
     }
 
-    fn rend_help_area(&self, area: Rect, buf: &mut Buffer) {
+    fn rend_help_area(&mut self, area: Rect, buf: &mut Buffer) {
         let horizontal = Layout::horizontal([
-            Constraint::Percentage(60),
-            Constraint::Percentage(0),
+            Constraint::Percentage(15),
+            Constraint::Percentage(25),
+            Constraint::Percentage(20),
             Constraint::Percentage(40),
         ]);
-        let [_left, _mid, right] = horizontal.areas(area);
+        let [left, mid_left, mid_right, right] = horizontal.areas(area);
 
+        self.rend_media_title(left, buf);
         self.rend_keybinds(right, buf);
+    }
+
+    fn rend_media_title(&mut self, area: Rect, buf: &mut Buffer) {
+        if let Some(sentence) = &self.get_current_sentence() {
+            let (msg, style) = (vec![sentence.media_title.clone().into()], Style::default());
+            let text = Text::from(Line::from(msg).patch_style(style));
+            Paragraph::new(text)
+                .block(Block::bordered().title("Media Title"))
+                .centered()
+                .render(area, buf);
+        }
     }
 
     fn rend_keybinds(&self, area: Rect, buf: &mut Buffer) {
@@ -168,10 +181,6 @@ impl AppState {
                             "{}'s Sentences",
                             &self.expressions[i].dict_word.clone()
                         ))
-                        // .style(match self.select_mode {
-                        //     SelectMode::Expressions => Style::default(),
-                        //     SelectMode::Sentences => Style::default().yellow().bold(),
-                        // })
                         .style(match has_sentences {
                             true => Style::default().light_red().bold(),
                             false => Style::default().light_green().bold(),
