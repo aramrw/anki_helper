@@ -67,7 +67,7 @@ impl AppState {
         let client: AnkiClient<'_> = AnkiClient::default();
 
         if let Some(i) = self.selected_expression {
-            let current_word = &self.expressions[i].dict_word;
+            let current_word = &self.expressions[i].dict_word.clone();
 
             let note_id = match find_note_from_word(&client, current_word) {
                 Ok(id) => id,
@@ -88,8 +88,8 @@ impl AppState {
                 }
             };
 
-            let sentence: Sentence = match self.get_current_sentence() {
-                Some(sent) => sent,
+            let sentence: Sentence = match &self.get_current_sentence() {
+                Some(sent) => sent.clone(),
                 None => {
                     self.err_msg = Some("Error: Failed to Get Current Sentence".to_string());
                     return;
@@ -102,7 +102,7 @@ impl AppState {
                 Ok(_) => {
                     let elapsed = instant.elapsed().as_secs();
                     self.info.msg =
-                        format!("Updated Fields for CardID: {} in {}s", &note_id, elapsed).into();
+                        format!("Updated Fields for CardID: {} - ({}) in {}s", &note_id, &current_word, elapsed).into();
                 }
                 Err(err) => {
                     let elapsed = instant.elapsed().as_secs();
