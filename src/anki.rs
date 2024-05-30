@@ -38,3 +38,10 @@ struct ConfigJson {
     fields: UserNoteFields,
 }
 
+#[derive(Serialize, Deserialize)]
+struct UserNoteFields {
+    sentence: String,
+    sentence_audio: String,
+    image: String,
+}
+
