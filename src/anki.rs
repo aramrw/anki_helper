@@ -45,3 +45,9 @@ struct UserNoteFields {
     image: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct ReqResult {
+    result: Option<Vec<u64>>,
+    error: Option<String>,
+}
+
