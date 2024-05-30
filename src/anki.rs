@@ -13,3 +13,11 @@ struct Note {
     picture: Option<Vec<Media>>,
 }
 
+#[derive(Serialize, Deserialize)]
+struct Media {
+    url: String,
+    filename: String,
+    skipHash: Option<String>,
+    fields: Vec<String>,
+}
+
