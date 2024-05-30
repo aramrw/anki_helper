@@ -149,7 +149,10 @@ impl AppState {
             let sentences = List::new(sentence_items)
                 .block(
                     Block::bordered()
-                        .title(format!("{}'s Sentences", &self.expressions[i].dict_word.clone()))
+                        .title(format!(
+                            "{}'s Sentences",
+                            &self.expressions[i].dict_word.clone()
+                        ))
                         .style(match self.select_mode {
                             SelectMode::Expressions => Style::default(),
                             SelectMode::Sentences => Style::default().yellow().bold(),
