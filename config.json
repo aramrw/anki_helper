@@ -1,0 +1,7 @@
+{
+  "fields": {
+    "sentence": "sentence",
+    "sentence_audio": "wordAudio",
+    "image": "picture"
+  }
+}
