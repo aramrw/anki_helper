@@ -63,6 +63,54 @@ struct ReqResult {
 impl AppState {
     pub async fn update_last_anki_card(&mut self) {
         let client = AnkiClient::default();
+        let client: AnkiClient<'_> = AnkiClient::default();
+
+        if let Some(i) = self.selected_expression {
+            let current_word = &self.expressions[i].dict_word;
+
+            let note_id = match find_note_from_word(&client, current_word) {
+                Ok(id) => id,
+                Err(_) => {
+                    match find_newest_note(&client, current_word) {
+                        Ok(id) => id,
+                        Err(err) => {
+                            self.err_msg = Some(format!("Error Finding Card: {}", err));
+                            return;
+                        }
+                    }
+                }
+            };
+
+            let fields: UserNoteFields = match read_config() {
+                Ok(fields) => fields,
+                Err(err) => {
+                    self.err_msg = Some(format!("Error Reading Config: {}", err));
+                    return;
+                }
+            };
+
+            let sentence: Sentence = match self.get_current_sentence() {
+                Some(sent) => sent,
+                None => {
+                    self.err_msg = Some("Error: Failed to Get Current Sentence".to_string());
+                    return;
+                }
+            };
+
+            let req: Request<UpdateNoteParams> =
+                into_update_note_req(note_id as u64, fields, sentence);
+            match post_note_update(req).await {
+                Ok(_) => {
+                    self.info.msg = format!("Updated Fields for CardID: {}", &note_id).into();
+                }
+                Err(err) => {
+                    self.err_msg =
+                        Some(format!("POST Error -> Failed to Update Anki Card: {}", err));
+                }
+            };
+        }
+    }
+}
 
 fn find_note_from_word(
     client: &AnkiClient,
