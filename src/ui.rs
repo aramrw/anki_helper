@@ -22,16 +22,13 @@ impl Widget for &mut AppState {
 
 impl AppState {
     fn rend_info_area(&self, area: Rect, buf: &mut Buffer) {
-        let horizontal = Layout::horizontal([
-            Constraint::Percentage(30),
-            Constraint::Percentage(30),
-            Constraint::Percentage(30),
-        ]);
+        let horizontal =
+            Layout::horizontal([Constraint::Percentage(40), Constraint::Percentage(60)]);
 
-        let [msg_area, found_area, _other] = horizontal.areas(area);
+        let [msg_area, err_area] = horizontal.areas(area);
 
         let (msg, style) = match &self.info.msg {
-            Some(msg) => (msg.clone(), Style::default()),
+            Some(msg) => (msg.clone(), Style::default().bold().fg(Color::Blue)),
             None => (
                 format!("Words: [{}]", self.expressions.len()),
                 Style::default(),
@@ -42,15 +39,19 @@ impl AppState {
         Paragraph::new(text)
             .block(Block::bordered().title("Information"))
             .render(msg_area, buf);
+
+        self.rend_err(err_area, buf);
     }
 
     fn rend_help_area(&self, area: Rect, buf: &mut Buffer) {
-        let horizontal =
-            Layout::horizontal([Constraint::Percentage(40), Constraint::Percentage(60)]);
-        let [left, right] = horizontal.areas(area);
+        let horizontal = Layout::horizontal([
+            Constraint::Percentage(60),
+            Constraint::Percentage(15),
+            Constraint::Percentage(35),
+        ]);
+        let [left, mid, right] = horizontal.areas(area);
 
-        self.rend_keybinds(left, buf);
-        self.rend_err(right, buf);
+        self.rend_keybinds(right, buf);
     }
 
     fn rend_keybinds(&self, area: Rect, buf: &mut Buffer) {
@@ -60,9 +61,9 @@ impl AppState {
                     "<Enter> ".yellow().bold(),
                     "Sentence Selection ".into(),
                     "<Up> ".yellow().bold(),
-                    "Select Prev ".into(),
+                    "Prev ".into(),
                     "<Down> ".yellow().bold(),
-                    "Select Next".into(),
+                    "Next".into(),
                 ],
                 Style::default().add_modifier(Modifier::RAPID_BLINK),
             ),
@@ -71,9 +72,9 @@ impl AppState {
                     "<Esc> ".yellow().bold(),
                     "Word Selection ".into(),
                     "<Up> ".yellow().bold(),
-                    "Select Prev ".into(),
+                    "Prev ".into(),
                     "<Down> ".yellow().bold(),
-                    "Select Next".into(),
+                    "Next".into(),
                 ],
                 Style::default().add_modifier(Modifier::RAPID_BLINK),
             ),
@@ -82,6 +83,7 @@ impl AppState {
         let text = Text::from(Line::from(msg).patch_style(style));
         Paragraph::new(text)
             .block(Block::bordered().title("Keybinds"))
+            .centered()
             .render(area, buf);
     }
 
