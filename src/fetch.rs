@@ -1,8 +1,11 @@
 use futures_util::StreamExt;
+use reqwest::Error;
 use reqwest::Response;
+use rodio::Source;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
+use std::io::Cursor;
 use std::thread;
 use std::time;
 
@@ -111,12 +114,28 @@ impl AppState {
         for item in resp.data {
             for ex in item.examples {
                 if let Some(image_url) = ex.image_url {
-                    sentences.push(Sentence::from(ex.sentence, image_url, ex.sound_url));
+                    sentences.push(Sentence::from(ex.sentence, ex.sound_url, image_url));
                 }
             }
         }
 
         self.expressions[index].sentences = Some(sentences);
         Ok(())
+    }
+
+    pub async fn play_audio(&mut self) {
+        if let Some(sentence) = self.get_current_sentence() {
+            tokio::task::spawn_blocking(move || {
+                let (_stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
+                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                let resp = reqwest::blocking::get(sentence.audio_url).unwrap();
+                let cursor = Cursor::new(resp.bytes().unwrap());
+                let source = rodio::Decoder::new(cursor).unwrap();
+                sink.append(source);
+                sink.sleep_until_end();
+            })
+            .await
+            .unwrap();
+        }
     }
 }
