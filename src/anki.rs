@@ -69,15 +69,12 @@ impl AppState {
         if let Some(i) = self.selected_expression {
             let current_word = &self.expressions[i].dict_word.clone();
 
-            let note_id = match find_note_from_word(&client, current_word) {
+            let note_id = match find_newest_note(&client) {
                 Ok(id) => id,
-                Err(_) => match find_newest_note(&client) {
-                    Ok(id) => id,
-                    Err(err) => {
-                        self.err_msg = Some(format!("Error Finding Card: {}", err));
-                        return;
-                    }
-                },
+                Err(err) => {
+                    self.err_msg = Some(format!("Error Finding Card: {}", err));
+                    return;
+                }
             };
 
             let fields: UserNoteFields = match read_config() {
@@ -101,8 +98,17 @@ impl AppState {
             match post_note_update(req).await {
                 Ok(_) => {
                     let elapsed = instant.elapsed().as_secs();
-                    self.info.msg =
-                        format!("Updated Fields for CardID: {} - ({}) in {}s", &note_id, &current_word, elapsed).into();
+                    self.info.msg = format!(
+                        "Updated Fields for CardID: {} - ({}) in {}s",
+                        &note_id, &current_word, elapsed
+                    )
+                    .into();
+                    match open_note_gui(&client, note_id) {
+                        Ok(_) => {}
+                        Err(err) => {
+                            self.err_msg = Some(format!("Error Opening Note GUI: {}", err));
+                        }
+                    }
                 }
                 Err(err) => {
                     let elapsed = instant.elapsed().as_secs();
@@ -114,6 +120,12 @@ impl AppState {
             };
         }
     }
+}
+
+fn open_note_gui(client: &AnkiClient, id: usize) -> Result<(), Box<dyn std::error::Error>> {
+    client.request(GuiEditNoteRequest { note: id })?;
+
+    Ok(())
 }
 
 fn find_note_from_word(
