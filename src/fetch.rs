@@ -1,13 +1,6 @@
-use futures_util::StreamExt;
-use reqwest::Error;
-use reqwest::Response;
-use rodio::Source;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs;
 use std::io::Cursor;
-use std::thread;
-use std::time;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct CategoryCount {
