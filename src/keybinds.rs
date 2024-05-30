@@ -18,7 +18,7 @@ impl AppState {
             SelectMode::Sentences if key.kind == KeyEventKind::Press => match key.code {
                 KeyCode::Char('P') => self.play_audio().await,
                 KeyCode::Char('C') => self.update_last_anki_card().await,
-                KeyCode::Esc => self.select_mode = SelectMode::Expressions,
+                KeyCode::Esc => self.reset_sentences_index(),
                 KeyCode::Up => self.select_prev_sentence(),
                 KeyCode::Down => self.select_next_sentence(),
                 _ => {}
@@ -29,11 +29,22 @@ impl AppState {
         Ok(())
     }
 
+    pub fn reset_sentences_index(&mut self) {
+        if let Some(i) = self.selected_expression {
+            self.expressions[i].selected_sentence = None;
+            self.expressions[i].sentences_state.select(None);
+        }
+        self.select_mode = SelectMode::Expressions 
+    }
+
     pub fn select_prev_sentence(&mut self) {
         if let Some(exp_index) = self.selected_expression {
             let selected_exp = &self.expressions[exp_index];
             if let Some(sentences) = &selected_exp.sentences {
-                if sentences.is_empty() { return; }
+                if sentences.is_empty() {
+                    return; 
+                }
+
                 let sentence_index = match selected_exp.sentences_state.selected() {
                     Some(i) => {
                         if i == 0 {
