@@ -193,6 +193,7 @@ fn format_sentence_field(field_name: &str, ik_sentence: &str) -> HashMap<String,
     map
 }
 
+#[allow(dead_code)]
 fn write_audio_bytes_file(filename: &str, bytes: &Vec<u8>) -> std::io::Result<String> {
     let dir = tempfile::tempdir()?;
     let file_path = dir.path().join(filename);
@@ -212,7 +213,7 @@ fn into_update_note_req(
     let picture: Option<Vec<Media>> = match &sentence.img_url {
         Some(img_url) => vec![Media {
             url: img_url.clone(),
-            filename: url_into_file_name(&img_url),
+            filename: url_into_file_name(img_url),
             skipHash: None,
             fields: vec![anki_fields.image.clone()],
         }]
