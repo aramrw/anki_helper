@@ -107,6 +107,11 @@ impl AppState {
         let mut sentences: Vec<Sentence> = Vec::new();
 
         for item in resp.data {
+            for empty_vec in item.dictionary {
+                for section in empty_vec {
+                    self.expressions[index].definitions.extend(section.glossary_list);
+                }
+            }
             for ex in item.examples {
                 if let Some(image_url) = ex.image_url {
                     sentences.push(Sentence::from(
