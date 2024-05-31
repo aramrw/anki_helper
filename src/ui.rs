@@ -3,7 +3,7 @@ use ratatui::{
     widgets::{Block, List, ListItem, /* Padding */ Paragraph},
 };
 
-use crate::app::{AppState, SelectMode};
+use crate::app::{AppState, SelectMode, Sentence};
 
 impl Widget for &mut AppState {
     fn render(self, area: Rect, buf: &mut Buffer) {
@@ -52,19 +52,7 @@ impl AppState {
         ]);
         let [left, mid_left, mid_right, right] = horizontal.areas(area);
 
-        self.rend_media_title(left, buf);
         self.rend_keybinds(right, buf);
-    }
-
-    fn rend_media_title(&mut self, area: Rect, buf: &mut Buffer) {
-        if let Some(sentence) = &self.get_current_sentence() {
-            let (msg, style) = (vec![sentence.media_title.clone().into()], Style::default());
-            let text = Text::from(Line::from(msg).patch_style(style));
-            Paragraph::new(text)
-                .block(Block::bordered().title("Media Title"))
-                .centered()
-                .render(area, buf);
-        }
     }
 
     fn rend_keybinds(&self, area: Rect, buf: &mut Buffer) {
@@ -125,10 +113,36 @@ impl AppState {
             .render(area, buf);
     }
 
+    fn rend_media_title(&mut self, area: Rect, buf: &mut Buffer) {
+        if let Some(sentence) = &self.get_current_sentence() {
+            let (msg, style) = (vec![sentence.media_title.clone().into()], Style::default());
+            let text = Text::from(Line::from(msg).patch_style(style));
+            Paragraph::new(text)
+                .block(Block::bordered().title("Media Title"))
+                .centered()
+                .render(area, buf);
+        }
+    }
+
+    fn rend_sentence_info(
+        &mut self,
+        area: Rect,
+        buf: &mut Buffer,
+        exp_index: usize,
+        sentences: Vec<Sentence>,
+    ) {
+        let vertical = Layout::vertical([Constraint::Percentage(10), Constraint::Percentage(10)]);
+        let [top, top_middle] = vertical.areas(area);
+        self.rend_media_title(top, buf);
+    }
+
     fn rend_main(&mut self, area: Rect, buf: &mut Buffer) {
-        let horizontal =
-            Layout::horizontal([Constraint::Percentage(15), Constraint::Percentage(60)]);
-        let [expressions_area, sentences_area] = horizontal.areas(area);
+        let horizontal = Layout::horizontal([
+            Constraint::Percentage(15),
+            Constraint::Percentage(60),
+            Constraint::Percentage(25),
+        ]);
+        let [expressions_area, sentences_area, info_area] = horizontal.areas(area);
 
         {
             let words: Vec<ListItem> = self
@@ -164,17 +178,21 @@ impl AppState {
         let mut sentence_items: Vec<ListItem> = Vec::new();
         if let Some(i) = self.selected_expression {
             let sentences = &self.expressions[i].sentences.clone();
-            if let Some(sentences) = sentences {
+
+            let sentences: Option<&Vec<Sentence>> = if let Some(sentences) = sentences {
                 sentence_items = sentences
                     .iter()
                     .enumerate()
                     .map(|(i, sentence)| sentence.to_list_item(i))
                     .collect();
+
+                Some(sentences)
+            } else {
+                None
             };
 
             let has_sentences = &sentence_items.is_empty();
-
-            let sentences = List::new(sentence_items)
+            let sentences_list = List::new(sentence_items)
                 .block(
                     Block::bordered()
                         .title(format!(
@@ -183,13 +201,10 @@ impl AppState {
                         ))
                         .style(match has_sentences {
                             true => Style::default().light_red().bold(),
-                            false => {
-                                match self.select_mode {
-                                    SelectMode::Expressions => Style::default().light_green().bold(),
-                                    SelectMode::Sentences => Style::default().light_yellow().bold(),
-                                }
-                                
-                            }
+                            false => match self.select_mode {
+                                SelectMode::Expressions => Style::default().light_green().bold(),
+                                SelectMode::Sentences => Style::default().light_yellow().bold(),
+                            },
                         }),
                 )
                 .highlight_style(
@@ -198,15 +213,52 @@ impl AppState {
                         .add_modifier(Modifier::REVERSED)
                         .fg(Color::White),
                 );
-            //.highlight_symbol("⇢ ");
-            //.highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
+
+            if let Some(sentences) = sentences {
+                match self.select_mode {
+                    SelectMode::Sentences => match self.expressions[i].selected_sentence {
+                        Some(int) => {
+                            if int > 0 {
+                                self.rend_sentence_info(info_area, buf, i, sentences.to_vec());
+                            } else {
+                                self.render_blank_sentence_info_block(
+                                    info_area,
+                                    buf,
+                                    has_sentences,
+                                );
+                            }
+                        }
+                        _ => {
+                            self.render_blank_sentence_info_block(info_area, buf, has_sentences);
+                        }
+                    },
+                    _ => {
+                        self.render_blank_sentence_info_block(info_area, buf, has_sentences);
+                    }
+                }
+            } else {
+                self.render_blank_sentence_info_block(info_area, buf, has_sentences);
+            }
 
             StatefulWidget::render(
-                sentences,
+                sentences_list,
                 sentences_area,
                 buf,
                 &mut self.expressions[i].sentences_state,
             );
         }
+    }
+
+    fn render_blank_sentence_info_block(&self, area: Rect, buf: &mut Buffer, has_sentences: &bool) {
+        Block::bordered()
+            .title("Sentence Information")
+            .style(match has_sentences {
+                true => Style::default().light_red().bold(),
+                false => match self.select_mode {
+                    SelectMode::Expressions => Style::default().light_green().bold(),
+                    SelectMode::Sentences => Style::default().light_yellow().bold(),
+                },
+            })
+            .render(area, buf);
     }
 }
