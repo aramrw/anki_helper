@@ -238,7 +238,7 @@ impl AppState {
                         .fg(Color::White),
                 );
 
-            if let Some(sentences) = sentences {
+            if sentences.is_some() {
                 match self.select_mode {
                     SelectMode::Sentences => match self.expressions[i].selected_sentence {
                         Some(_int) => {
