@@ -124,16 +124,33 @@ impl AppState {
         }
     }
 
-    fn rend_sentence_info(
-        &mut self,
-        area: Rect,
-        buf: &mut Buffer,
-        exp_index: usize,
-        sentences: Vec<Sentence>,
-    ) {
-        let vertical = Layout::vertical([Constraint::Percentage(10), Constraint::Percentage(10)]);
-        let [top, top_middle] = vertical.areas(area);
-        self.rend_media_title(top, buf);
+    fn rend_sentence_defs(&mut self, area: Rect, buf: &mut Buffer) {
+        if let Some(i) = self.selected_expression {
+            let definitions = &self.expressions[i].definitions;
+
+            let def_items = definitions.iter().enumerate().map(|(i, def)| {
+                let (msg, style) = (Span::from(format!("{}. {}", i, def)), Style::default());
+                let line = Line::from(msg).patch_style(style);
+                ListItem::new(line)
+            });
+
+            let defs = List::new(def_items).block(
+                Block::bordered()
+                    .title(format!("{}'s Definitions", &self.expressions[i].dict_word))
+                    .style(Style::default()),
+            );
+
+            ratatui::widgets::Widget::render(&defs, area, buf);
+        }
+    }
+
+    fn rend_sentence_info(&mut self, area: Rect, buf: &mut Buffer) {
+        if let Some(i) = self.selected_expression {
+            let vertical = Layout::vertical([Constraint::Length(3), Constraint::Length((self.expressions[i].definitions.len() + 2) as u16)]);
+            let [top, top_middle] = vertical.areas(area);
+            self.rend_media_title(top, buf);
+            self.rend_sentence_defs(top_middle, buf)
+        }
     }
 
     fn rend_main(&mut self, area: Rect, buf: &mut Buffer) {
@@ -219,7 +236,7 @@ impl AppState {
                     SelectMode::Sentences => match self.expressions[i].selected_sentence {
                         Some(int) => {
                             if int > 0 {
-                                self.rend_sentence_info(info_area, buf, i, sentences.to_vec());
+                                self.rend_sentence_info(info_area, buf);
                             } else {
                                 self.render_blank_sentence_info_block(
                                     info_area,
