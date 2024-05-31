@@ -21,7 +21,7 @@ pub(crate) struct Sentence {
     pub audio_url: String,
     pub audio_data: Option<Vec<u8>>,
     pub img_url: Option<String>,
-    pub media_title: String, 
+    pub media_title: String,
 }
 
 pub(crate) struct Expression {
@@ -29,6 +29,7 @@ pub(crate) struct Expression {
     pub sentences: Option<Vec<Sentence>>,
     pub sentences_state: ListState,
     pub selected_sentence: Option<usize>,
+    pub definitions: Vec<String>,
 }
 
 #[derive(Default)]
@@ -92,24 +93,14 @@ impl Sentence {
         audio_url: &str,
         audio_data: Option<Vec<u8>>,
         img_url: &str,
-        media_title: &str
+        media_title: &str,
     ) -> Self {
-        if let Some(data_vec) = audio_data {
-            Self {
-                sentence: sentence.to_string(),
-                audio_url: audio_url.to_string(),
-                audio_data: Some(data_vec),
-                img_url: Some(img_url.to_string()),
-                media_title: media_title.to_string(),
-            }
-        } else {
-            Self {
-                sentence: sentence.to_string(),
-                audio_url: audio_url.to_string(),
-                audio_data: None,
-                img_url: Some(img_url.to_string()),
-                media_title: media_title.to_string(),
-            }
+        Self {
+            sentence: sentence.to_string(),
+            audio_url: audio_url.to_string(),
+            audio_data,
+            img_url: Some(img_url.to_string()),
+            media_title: media_title.to_string(),
         }
     }
 
@@ -126,6 +117,7 @@ impl Expression {
             sentences,
             sentences_state: ListState::default(),
             selected_sentence: Some(0),
+            definitions: Vec::new(),
         }
     }
 
