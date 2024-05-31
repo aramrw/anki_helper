@@ -54,7 +54,7 @@ struct Example {
     deck_name_japanese: Option<String>,
     episode: StringOru64,
     id: u64,
-    image_url: Option<String>,
+    image_url: String,
     position: u64,
     sentence: String,
     sentence_id: String,
@@ -109,19 +109,24 @@ impl AppState {
         for item in resp.data {
             for empty_vec in item.dictionary {
                 for section in empty_vec {
-                    self.expressions[index].definitions.extend(section.glossary_list);
+                    self.expressions[index]
+                        .definitions
+                        .extend(section.glossary_list);
                 }
             }
             for ex in item.examples {
-                if let Some(image_url) = ex.image_url {
-                    sentences.push(Sentence::from(
-                        &ex.sentence,
-                        &ex.sound_url,
-                        None,
-                        &image_url,
-                        &ex.deck_name,
-                    ));
-                }
+                let image_url = if !ex.image_url.is_empty() {
+                    Some(ex.image_url.to_string())
+                } else {
+                    None
+                };
+                sentences.push(Sentence::from(
+                    &ex.sentence,
+                    &ex.sound_url,
+                    None,
+                    image_url,
+                    &ex.deck_name,
+                ));
             }
         }
 
