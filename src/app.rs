@@ -92,14 +92,14 @@ impl Sentence {
         sentence: &str,
         audio_url: &str,
         audio_data: Option<Vec<u8>>,
-        img_url: &str,
+        img_url: Option<String>,
         media_title: &str,
     ) -> Self {
         Self {
             sentence: sentence.to_string(),
             audio_url: audio_url.to_string(),
             audio_data,
-            img_url: Some(img_url.to_string()),
+            img_url,
             media_title: media_title.to_string(),
         }
     }
