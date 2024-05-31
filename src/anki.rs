@@ -93,7 +93,7 @@ impl AppState {
                 }
             };
 
-            let filename = url_into_file_name(&sentence.audio_url.clone());
+            let filename = url_into_file_name(&sentence.audio_url);
             let req: Request<UpdateNoteParams> =
                 into_update_note_req(note_id as u64, fields, sentence, filename);
             match post_note_update(req).await {
@@ -121,6 +121,13 @@ impl AppState {
             };
         }
     }
+}
+
+fn url_into_file_name(url: &str) -> String {
+    url.rsplit_once('/')
+        .unwrap_or_else(|| panic!("url: {}", url))
+        .1
+        .to_string()
 }
 
 fn open_note_gui(client: &AnkiClient, id: usize) -> Result<(), Box<dyn std::error::Error>> {
@@ -183,10 +190,6 @@ async fn post_note_update(
     Ok(())
 }
 
-fn url_into_file_name(url: &str) -> String {
-    url.rsplit_once('/').unwrap().1.to_string()
-}
-
 fn format_sentence_field(field_name: &str, ik_sentence: &str) -> HashMap<String, String> {
     let mut map = HashMap::new();
     map.insert(field_name.to_string(), ik_sentence.to_string());
@@ -228,12 +231,21 @@ fn into_update_note_req(
         fields: vec![anki_fields.sentence_audio.clone()],
     }];
 
-    let note = Note {
-        id,
-        fields: { sentence_field },
-        audio,
-        picture,
+    let note: Note = match picture {
+        Some(picture) => Note {
+            id,
+            fields: { sentence_field },
+            audio,
+            picture: Some(picture),
+        },
+        None => Note {
+            id,
+            fields: { sentence_field },
+            audio,
+            picture,
+        },
     };
+
     let params = UpdateNoteParams { note };
 
     Request {
@@ -245,8 +257,8 @@ fn into_update_note_req(
 
 fn read_config() -> Result<UserNoteFields, std::io::Error> {
     let config_path = "./config.json";
-    let file = std::fs::File::open(config_path)?;
-    let config: ConfigJson = serde_json::from_reader(file)?;
+    let data = std::fs::read(config_path)?;
+    let config: ConfigJson = serde_json::from_slice(&data)?;
 
     Ok(config.fields)
 }
