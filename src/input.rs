@@ -20,3 +20,12 @@ use ratatui::{
         self.move_cursor_right();
     }
 
+    pub fn byte_index(&self) -> usize {
+        self.input
+            .text
+            .char_indices()
+            .map(|(i, _)| i)
+            .nth(self.input.char_index)
+            .unwrap_or(self.input.text.len())
+    }
+
