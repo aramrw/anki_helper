@@ -69,3 +69,22 @@ use ratatui::{
                 return;
             }
 
+            let mut found = false;
+            for (i, exp) in self.expressions.iter().enumerate() {
+                if parsed == i || exp.dict_word == user_input {
+                    self.select_mode = SelectMode::Expressions;
+                    self.expressions_state.select(Some(i));
+                    self.reset_input();
+                    found = true;
+                    break;
+                }
+            }
+            if !found {
+                // for input search, add logic to display fetched results
+                self.input.mode = InputMode::Search;
+            }
+        } else {
+            self.input.mode = InputMode::Search;
+        }
+    }
+
