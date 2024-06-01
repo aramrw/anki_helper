@@ -153,7 +153,7 @@ impl AppState {
                     "<Enter> ".light_green().bold(),
                     "Sentence Selection ".green(),
                 ],
-                Style::default().add_modifier(Modifier::RAPID_BLINK),
+                Style::default(),
             ),
             SelectMode::Sentences => (
                 vec![
@@ -171,7 +171,7 @@ impl AppState {
                     "<C> ".light_green().bold(),
                     "Update Card".green(),
                 ],
-                Style::default().add_modifier(Modifier::RAPID_BLINK),
+                Style::default(),
             ),
             SelectMode::Input => (
                 vec![
@@ -189,7 +189,7 @@ impl AppState {
                     "<Enter> ".light_blue().bold(),
                     "Confirm ".into(),
                 ],
-                Style::default().add_modifier(Modifier::RAPID_BLINK),
+                Style::default(),
             ),
         };
 
