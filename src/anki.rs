@@ -204,10 +204,16 @@ fn format_sentence_field(field_name: &str, ik_sentence: &str) -> HashMap<String,
 
 #[allow(dead_code)]
 fn write_audio_bytes_file(filename: &str, bytes: &Vec<u8>) -> std::io::Result<String> {
-    let dir = tempfile::tempdir()?;
-    let file_path = dir.path().join(filename);
+    //let dir = tempfile::tempdir()?;
+    let dir = std::path::Path::new("C:\\Users\\arami\\Desktop");
+    let file_path = dir.join(filename);
     std::fs::write(&file_path, bytes)?;
-    let audio_url = format!("file://{}", &file_path.to_string_lossy());
+    //let audio_url = format!("file:\\{}", &file_path.to_string_lossy());
+    let audio_url = format!(
+        "[sound:{}]'.format({})",
+        file_path.to_string_lossy(),
+        filename
+    );
 
     Ok(audio_url)
 }
