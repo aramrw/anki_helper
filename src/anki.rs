@@ -69,11 +69,17 @@ impl AppState {
         if let Some(i) = self.selected_expression {
             let current_word = &self.expressions[i].dict_word.clone();
 
-            let note_id = match find_newest_note(&client) {
-                Ok(id) => id,
-                Err(err) => {
-                    self.err_msg = Some(format!("Error Finding Card: {}", err));
-                    return;
+            let note_id = match self.input.text.trim().parse::<usize>() {
+                Ok(id) => id, // if the parsing succeeds, use the parsed id
+                Err(_) => {
+                    // if the parsing fails, find the newest note id
+                    match find_newest_note(&client) {
+                        Ok(id) => id,
+                        Err(err) => {
+                            self.err_msg = Some(format!("Error Finding Card: {}", err));
+                            return;
+                        }
+                    }
                 }
             };
 
