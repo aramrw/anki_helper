@@ -62,7 +62,7 @@ impl AppState {
     }
 
     pub fn confirm_search_query(&mut self) {
-        let user_input = self.input.text.trim();
+        let user_input = self.input.text.trim().to_lowercase();
         if let Ok(parsed) = user_input.parse::<usize>() {
             if parsed > 5000 {
                 self.input.mode = InputMode::FindID;
@@ -71,8 +71,8 @@ impl AppState {
             }
 
             let mut found = false;
-            for (i, exp) in self.expressions.iter().enumerate() {
-                if parsed == i || exp.dict_word == user_input {
+            for (i, _) in self.expressions.iter().enumerate() {
+                if parsed == i {
                     self.select_mode = SelectMode::Expressions;
                     self.expressions_state.select(Some(i));
                     self.reset_input();
@@ -85,6 +85,16 @@ impl AppState {
                 self.input.mode = InputMode::Search;
             }
         } else {
+            for (i, exp) in self.expressions.iter().enumerate() {
+                let dict_word = exp.dict_word.trim().to_lowercase().replace('\n', "");
+                if dict_word == user_input {
+                    self.select_mode = SelectMode::Expressions;
+                    self.expressions_state.select(Some(i));
+                    self.reset_input();
+                    return;
+                }
+            }
+
             self.input.mode = InputMode::Search;
         }
     }
