@@ -51,3 +51,7 @@ use ratatui::{
         }
     }
 
+    pub fn clamp_cursor(&self, new_cursor_pos: usize) -> usize {
+        new_cursor_pos.clamp(0, self.input.text.chars().count())
+    }
+
