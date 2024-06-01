@@ -14,3 +14,9 @@ use ratatui::{
         self.input.char_index = self.clamp_cursor(cursor_moved_right);
     }
 
+    pub fn enter_char(&mut self, new_char: char) {
+        let index = self.byte_index();
+        self.input.text.insert(index, new_char);
+        self.move_cursor_right();
+    }
+
