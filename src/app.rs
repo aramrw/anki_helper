@@ -7,6 +7,23 @@ pub enum SelectMode {
     #[default]
     Expressions,
     Sentences,
+    Input,
+}
+
+#[derive(Default, PartialEq)]
+pub enum InputMode {
+    #[default]
+    Normal,
+    Search,
+    //Grep,
+    FindID,
+}
+
+#[derive(Default)]
+pub struct InputBox {
+    pub text: String,
+    pub char_index: usize,
+    pub mode: InputMode,
 }
 
 #[derive(Default)]
@@ -40,6 +57,7 @@ pub(crate) struct AppState {
     pub select_mode: SelectMode,
     pub err_msg: Option<String>,
     pub info: Info,
+    pub input: InputBox,
 }
 
 impl AppState {
@@ -51,6 +69,7 @@ impl AppState {
             select_mode: SelectMode::Expressions,
             err_msg: None,
             info: Info::default(),
+            input: InputBox::default(),
         }
     }
 }
