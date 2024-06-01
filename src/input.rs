@@ -60,3 +60,12 @@ use ratatui::{
         self.input.text.clear();
     }
 
+    pub fn confirm_search_query(&mut self) {
+        let user_input = self.input.text.trim();
+        if let Ok(parsed) = user_input.parse::<usize>() {
+            if parsed > 5000 {
+                self.input.mode = InputMode::FindID;
+                self.select_mode = SelectMode::Expressions;
+                return;
+            }
+
