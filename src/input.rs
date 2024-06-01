@@ -75,6 +75,7 @@ impl AppState {
                 if parsed == i {
                     self.select_mode = SelectMode::Expressions;
                     self.expressions_state.select(Some(i));
+                    self.selected_expression = Some(i);
                     self.reset_input();
                     found = true;
                     break;
@@ -90,6 +91,7 @@ impl AppState {
                 if dict_word == user_input {
                     self.select_mode = SelectMode::Expressions;
                     self.expressions_state.select(Some(i));
+                    self.selected_expression = Some(i);
                     self.reset_input();
                     return;
                 }
