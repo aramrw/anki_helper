@@ -18,4 +18,5 @@ futures-util = "0.3"
 rodio = "=0.17.1"
 anki_bridge = { version = "0.8.0", features = ["ureq_blocking"] }
 tempfile = "3.10.1"
+arboard = "3.4.0"
 # headless_chrome = "1.0.10"
