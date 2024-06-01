@@ -53,49 +53,7 @@ impl AppState {
         let [left, mid_left, mid_right, right] = horizontal.areas(area);
 
         self.rend_keybinds(right, buf);
-    }
-
-    fn rend_keybinds(&self, area: Rect, buf: &mut Buffer) {
-        let (msg, style) = match self.select_mode {
-            SelectMode::Expressions => (
-                vec![
-                    "(".into(),
-                    "<Up> ".light_yellow().bold(),
-                    "Prev ".yellow(),
-                    "| ".into(),
-                    "<Down> ".light_yellow().bold(),
-                    "Next".yellow(),
-                    ") ".into(),
-                    "<Enter> ".light_green().bold(),
-                    "Sentence Selection ".green(),
-                ],
-                Style::default().add_modifier(Modifier::RAPID_BLINK),
-            ),
-            SelectMode::Sentences => (
-                vec![
-                    "<Esc> ".light_red().bold(),
-                    "Back ".red(),
-                    "(".into(),
-                    "<Up> ".light_yellow().bold(),
-                    "Prev ".yellow(),
-                    "| ".into(),
-                    "<Down> ".light_yellow().bold(),
-                    "Next ".yellow(),
-                    ") ".into(),
-                    "<P> ".light_blue().bold(),
-                    "Play Audio ".blue(),
-                    "<C> ".light_green().bold(),
-                    "Update Card".green(),
-                ],
-                Style::default().add_modifier(Modifier::RAPID_BLINK),
-            ),
-        };
-
-        let text = Text::from(Line::from(msg).patch_style(style));
-        Paragraph::new(text)
-            .block(Block::bordered().title("Keybinds"))
-            .centered()
-            .render(area, buf);
+        self.rend_input_box(left, buf);
     }
 
     fn rend_err(&self, area: Rect, buf: &mut Buffer) {
@@ -182,7 +140,7 @@ impl AppState {
                         .title("Expressions")
                         .style(match self.select_mode {
                             SelectMode::Expressions => Style::default().yellow().bold(),
-                            SelectMode::Sentences => Style::default(),
+                            _ => Style::default(),
                         }),
                 )
                 .highlight_style(
@@ -224,10 +182,11 @@ impl AppState {
                             &self.expressions[i].dict_word.clone()
                         ))
                         .style(match has_sentences {
-                            true => Style::default().light_red().bold(),
+                            true => Style::default().red().bold(),
                             false => match self.select_mode {
                                 SelectMode::Expressions => Style::default().light_green().bold(),
                                 SelectMode::Sentences => Style::default().light_yellow().bold(),
+                                _ => Style::default(),
                             },
                         }),
                 )
@@ -270,10 +229,11 @@ impl AppState {
         Block::bordered()
             .title("Sentence Information")
             .style(match has_sentences {
-                true => Style::default().light_red().bold(),
+                true => Style::default().red().bold(),
                 false => match self.select_mode {
                     SelectMode::Expressions => Style::default().light_green().bold(),
                     SelectMode::Sentences => Style::default().light_yellow().bold(),
+                    _ => Style::default(),
                 },
             })
             .render(area, buf);
