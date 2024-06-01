@@ -4,6 +4,7 @@ use ratatui::{
     widgets::{Block, Paragraph},
 };
 
+impl AppState {
     pub fn move_cursor_left(&mut self) {
         let cursor_moved_left = self.input.char_index.saturating_sub(1);
         self.input.char_index = self.clamp_cursor(cursor_moved_left);
@@ -88,3 +89,22 @@ use ratatui::{
         }
     }
 
+    pub fn rend_input_box(&self, area: Rect, buf: &mut Buffer) {
+        Paragraph::new(Text::from(self.input.text.clone()).style(Color::White))
+            .block(
+                Block::bordered()
+                    .title("Search")
+                    // .style(match self.input.mode {
+                    //     InputMode::Search => Style::default().light_magenta(),
+                    //     InputMode::Grep => Style::default().light_cyan(),
+                    //     InputMode::FindID => Style::default().light_blue(),
+                    //     _ => Style::default(),
+                    // })
+                    .style(match self.select_mode {
+                        SelectMode::Input => Style::default().light_yellow(),
+                        _ => Style::default(),
+                    }),
+            )
+            .render(area, buf);
+    }
+}
