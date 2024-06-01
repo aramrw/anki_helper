@@ -55,3 +55,8 @@ use ratatui::{
         new_cursor_pos.clamp(0, self.input.text.chars().count())
     }
 
+    pub fn reset_input(&mut self) {
+        self.input.char_index = 0;
+        self.input.text.clear();
+    }
+
