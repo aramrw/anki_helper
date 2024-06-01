@@ -1,6 +1,7 @@
 use crate::app::*;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
+use arboard::Clipboard;
 
 impl AppState {
     pub fn get_current_sentence(&mut self) -> Option<Sentence> {
@@ -48,5 +49,11 @@ impl AppState {
                 }
             }
         }
+    }
+
+    pub fn handle_paste(&mut self) {
+        let mut clipboard = Clipboard::new().unwrap();
+        self.input.text += &clipboard.get_text().unwrap();
+        self.input.char_index = self.input.text.len();
     }
 }
