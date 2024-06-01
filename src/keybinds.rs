@@ -123,4 +123,66 @@ impl AppState {
         self.selected_expression = Some(i);
         self.expressions_state.select(Some(i));
     }
+
+    pub fn rend_keybinds(&self, area: Rect, buf: &mut Buffer) {
+        let (msg, style) = match self.select_mode {
+            SelectMode::Expressions => (
+                vec![
+                    "(".into(),
+                    "<Up> ".light_yellow().bold(),
+                    "Prev ".yellow(),
+                    "| ".into(),
+                    "<Down> ".light_yellow().bold(),
+                    "Next".yellow(),
+                    ") ".into(),
+                    "<Enter> ".light_green().bold(),
+                    "Sentence Selection ".green(),
+                ],
+                Style::default().add_modifier(Modifier::RAPID_BLINK),
+            ),
+            SelectMode::Sentences => (
+                vec![
+                    "<Esc> ".light_red().bold(),
+                    "Back ".red(),
+                    "(".into(),
+                    "<Up> ".light_yellow().bold(),
+                    "Prev ".yellow(),
+                    "| ".into(),
+                    "<Down> ".light_yellow().bold(),
+                    "Next ".yellow(),
+                    ") ".into(),
+                    "<P> ".light_blue().bold(),
+                    "Play Audio ".blue(),
+                    "<C> ".light_green().bold(),
+                    "Update Card".green(),
+                ],
+                Style::default().add_modifier(Modifier::RAPID_BLINK),
+            ),
+            SelectMode::Input => (
+                vec![
+                    "<Esc> ".light_red().bold(),
+                    "Back ".red(),
+                    "(".into(),
+                    "<Left> ".light_yellow().bold(),
+                    "Prev ".yellow(),
+                    "| ".into(),
+                    "<Right> ".light_yellow().bold(),
+                    "Next ".yellow(),
+                    ") ".into(),
+                    "<P> ".light_blue().bold(),
+                    "Paste ".into(),
+                    "<Enter> ".light_blue().bold(),
+                    "Confirm ".into(),
+                ],
+                Style::default().add_modifier(Modifier::RAPID_BLINK),
+            ),
+        };
+
+        let text = Text::from(Line::from(msg).patch_style(style));
+        Paragraph::new(text)
+            .block(Block::bordered().title("Keybinds"))
+            .centered()
+            .render(area, buf);
+    }
+
 }
