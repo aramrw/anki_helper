@@ -34,11 +34,6 @@ impl AppState {
 
     pub async fn fetch_sentences(&mut self) {
         if let Some(i) = self.selected_expression {
-            if let Some(sentences) = &self.expressions[i].sentences {
-                if !sentences.is_empty() {
-                    return;
-                };
-            }
             let current_word = self.expressions[i].dict_word.clone();
 
             match self.fetch_api(current_word.clone(), i).await {
