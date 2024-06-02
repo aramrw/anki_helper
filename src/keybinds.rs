@@ -1,11 +1,11 @@
 use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind};
 //use ratatui::prelude::*;
 use crate::app::{AppState, SelectMode};
-use std::io;
 use ratatui::{
     prelude::*,
     widgets::{Block, Paragraph},
 };
+use std::io;
 
 impl AppState {
     pub async fn handle_keybinds(&mut self, key: KeyEvent) -> io::Result<()> {
@@ -35,7 +35,7 @@ impl AppState {
             SelectMode::Input if key.kind == KeyEventKind::Press => match key.code {
                 KeyCode::Char('P') => self.handle_paste(),
                 KeyCode::Esc => self.select_mode = SelectMode::Expressions,
-                KeyCode::Enter => self.confirm_search_query(), 
+                KeyCode::Enter => self.confirm_search_query(),
                 KeyCode::Backspace => self.delete_char(),
                 KeyCode::Left => self.move_cursor_left(),
                 KeyCode::Right => self.move_cursor_right(),
@@ -199,5 +199,4 @@ impl AppState {
             .centered()
             .render(area, buf);
     }
-
 }
