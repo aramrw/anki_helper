@@ -1,4 +1,4 @@
-use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 //use ratatui::prelude::*;
 use crate::app::{AppState, SelectMode};
 use ratatui::{
@@ -12,9 +12,25 @@ impl AppState {
         match self.select_mode {
             SelectMode::Expressions if key.kind == KeyEventKind::Press => match key.code {
                 KeyCode::Char('I') => self.select_mode = SelectMode::Input,
-                KeyCode::Enter => {
-                    self.select_mode = SelectMode::Sentences;
-                    self.fetch_sentences().await
+                KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    if let Some(i) = self.selected_expression {
+                        self.expressions[i].sentences = None;
+                        self.expressions[i].exact_search = false;
+                        self.select_mode = SelectMode::Sentences;
+                        if self.expressions[i].sentences.is_none() {
+                            self.fetch_sentences().await;
+                        }
+                    }
+                }
+                KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    if let Some(i) = self.selected_expression {
+                        self.expressions[i].sentences = None;
+                        self.expressions[i].exact_search = true;
+                        self.select_mode = SelectMode::Sentences;
+                        if self.expressions[i].sentences.is_none() {
+                            self.fetch_sentences().await;
+                        }
+                    }
                 }
                 KeyCode::Down => self.select_next_exp(),
                 KeyCode::Up => self.select_prev_exp(),
@@ -60,10 +76,6 @@ impl AppState {
         if let Some(exp_index) = self.selected_expression {
             let selected_exp = &self.expressions[exp_index];
             if let Some(sentences) = &selected_exp.sentences {
-                if sentences.is_empty() {
-                    return;
-                }
-
                 let sentence_index = match selected_exp.sentences_state.selected() {
                     Some(i) => {
                         if i == 0 {
