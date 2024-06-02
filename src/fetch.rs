@@ -98,16 +98,23 @@ impl AppState {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let instant = Instant::now();
 
-        let format_url = format!(
-            "https://api.immersionkit.com/look_up_dictionary?keyword={}&sort=shortness",
-            &word
-        );
+        let mut format_url = String::new();
+        if self.expressions[index].exact_search {
+            format_url = format!(
+                "https://api.immersionkit.com/look_up_dictionary?keyword={}&exact=true&sort=shortness",
+                &word
+            );
+        } else {
+            format_url = format!(
+                "https://api.immersionkit.com/look_up_dictionary?keyword={}&sort=shortness",
+                &word
+            );
+        }
 
         let resp = reqwest::get(&format_url)
             .await?
             .json::<JsonSchema>()
-            .await
-            .unwrap();
+            .await?;
 
         let mut sentences: Vec<Sentence> = Vec::new();
         for item in resp.data {
@@ -133,20 +140,34 @@ impl AppState {
                 ));
             }
         }
-      
+
         if sentences.is_empty() {
             self.select_mode = SelectMode::Expressions;
+            if self.expressions[index].exact_search {
+            self.info.msg = format!("No Exact Sentences found for {}", &word).into();
+            } else {
             self.info.msg = format!("No Sentences found for {}", &word).into();
+            }
             return Ok(());
         }
 
         self.expressions[index].sentences = Some(sentences);
-        self.info.msg = format!(
-            "Fetched sentences for {} in {}s",
-            &word,
-            instant.elapsed().as_secs()
-        )
-        .into();
+        self.err_msg = None;
+        if self.expressions[index].exact_search {
+            self.info.msg = format!(
+                "Fetched Exact Sentences for {} in {}s",
+                &word,
+                instant.elapsed().as_secs()
+            )
+            .into();
+        } else {
+            self.info.msg = format!(
+                "Fetched Sentences For {} in {}s",
+                &word,
+                instant.elapsed().as_secs()
+            )
+            .into();
+        }
         Ok(())
     }
 
