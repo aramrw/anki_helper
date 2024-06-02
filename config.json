@@ -1,5 +1,6 @@
 {
   "fields": {
+		"expression": "wordDictionaryForm",
     "sentence": "sentence",
     "sentence_audio": "wordAudio",
     "image": "picture"
