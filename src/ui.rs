@@ -28,7 +28,7 @@ impl AppState {
         let [msg_area, err_area] = horizontal.areas(area);
 
         let (msg, style) = match &self.info.msg {
-            Some(msg) => (msg.clone(), Style::default().bold().fg(Color::Blue)),
+            Some(msg) => (msg.clone(), Style::default().bold().fg(Color::Blue).add_modifier(Modifier::RAPID_BLINK)),
             None => (
                 format!("Words: [{}]", self.expressions.len()),
                 Style::default(),
@@ -58,7 +58,7 @@ impl AppState {
 
     fn rend_err(&self, area: Rect, buf: &mut Buffer) {
         let (msg, style) = match &self.err_msg {
-            Some(msg) => (msg.clone(), Style::default().light_red().bold()),
+            Some(msg) => (msg.clone(), Style::default().light_red().bold().add_modifier(Modifier::RAPID_BLINK)),
             None => (
                 "No Errors :)".to_string(),
                 Style::default().light_green().bold(),
