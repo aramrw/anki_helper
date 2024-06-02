@@ -1,6 +1,8 @@
+use anki_bridge::AnkiClient;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::{prelude::*, widgets::*};
 use std::io;
+//use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
 pub enum SelectMode {
@@ -58,6 +60,7 @@ pub(crate) struct AppState {
     pub err_msg: Option<String>,
     pub info: Info,
     pub input: InputBox,
+    pub client: AnkiClient<'static>
 }
 
 impl AppState {
@@ -70,12 +73,13 @@ impl AppState {
             err_msg: None,
             info: Info::default(),
             input: InputBox::default(),
+            client: AnkiClient::default(),
         }
     }
 }
 
 impl AppState {
-    pub async fn run(&mut self, mut term: Terminal<impl Backend>) -> io::Result<()> {
+    pub async fn run( &mut self, mut term: Terminal<impl Backend>) -> io::Result<()> {
         match self.read_words_file() {
             Ok(_) => {}
             Err(err) => self.err_msg = Some(format!("Error Reading `words.txt`: {}", err)),
