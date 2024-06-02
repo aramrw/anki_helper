@@ -1,3 +1,6 @@
+use crate::anki::{find_newest_note, read_config};
+use anki_bridge::notes_actions::notes_info::NotesInfoRequest;
+use anki_bridge::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Cursor;
@@ -94,10 +97,12 @@ impl AppState {
         index: usize,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let instant = Instant::now();
+
         let format_url = format!(
             "https://api.immersionkit.com/look_up_dictionary?keyword={}&sort=shortness",
             &word
         );
+
         let resp = reqwest::get(&format_url)
             .await?
             .json::<JsonSchema>()
@@ -105,7 +110,6 @@ impl AppState {
             .unwrap();
 
         let mut sentences: Vec<Sentence> = Vec::new();
-
         for item in resp.data {
             for empty_vec in item.dictionary {
                 for section in empty_vec {
@@ -130,6 +134,8 @@ impl AppState {
             }
         }
 
+        let clone_word = word.clone();
+      
         if sentences.is_empty() {
             self.select_mode = SelectMode::Expressions;
             self.info.msg = format!("No Sentences found for {}", &word).into();
@@ -137,7 +143,6 @@ impl AppState {
         }
 
         self.expressions[index].sentences = Some(sentences);
-        self.err_msg = None;
         self.info.msg = format!(
             "Fetched sentences for {} in {}s",
             &word,
@@ -174,4 +179,39 @@ impl AppState {
         }
         Ok(())
     }
+}
+
+pub fn check_note_exists(
+    client: AnkiClient,
+    current_exp: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let config = read_config()?;
+
+    let note_id = find_newest_note(&client)?;
+
+    let note_info = client.request(NotesInfoRequest {
+        notes: vec![note_id],
+    });
+
+    let note = note_info?;
+    let exp_html = note.last().unwrap().fields.get(&config.expression).unwrap();
+
+    // extract text from html and join them
+
+    let re = regex::Regex::new(r">([^<]+)<").unwrap();
+    let text = &exp_html.value;
+    let mut result = String::new();
+    for cap in re.captures_iter(text) {
+        result.push_str(&cap[1]);
+    }
+
+    if *current_exp != result {
+        return Err(format!(
+            "Warning: Last Made Note: {} != {}; It Will Get Overwritten!",
+            result, current_exp
+        )
+        .into());
+    }
+
+    Ok(())
 }
