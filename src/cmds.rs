@@ -46,6 +46,15 @@ impl AppState {
         }
     }
 
+    pub fn handle_copy_to_input(&mut self) {
+        if let Some(i) = self.selected_expression {
+            let selected_word = &self.expressions[i].dict_word;
+            self.select_mode = SelectMode::Input;
+            self.input.text += selected_word.trim();
+            self.input.char_index = self.input.text.len() - 1;
+        }
+    }
+
     pub fn handle_paste(&mut self) {
         let mut clipboard = Clipboard::new().unwrap();
         self.input.text += &clipboard.get_text().unwrap();
