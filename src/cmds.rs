@@ -1,10 +1,10 @@
 use crate::app::*;
+use arboard::Clipboard;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
-use arboard::Clipboard;
 
 impl AppState {
-    pub fn get_current_sentence(&mut self) -> Option<Sentence> {
+    pub fn get_current_sentence(&self) -> Option<Sentence> {
         if let Some(exp_index) = self.selected_expression {
             let expression = &self.expressions[exp_index];
             if let Some(sentence_index) = expression.selected_sentence {
@@ -40,9 +40,9 @@ impl AppState {
                 };
             }
             let current_word = self.expressions[i].dict_word.clone();
+
             match self.fetch_api(current_word.clone(), i).await {
-                Ok(_) => {
-                }
+                Ok(_) => {}
                 Err(err) => {
                     self.err_msg = Some(format!("Error Fetching {}: {}", &current_word, err));
                     self.info.msg = None;
