@@ -12,6 +12,7 @@ impl AppState {
         match self.select_mode {
             SelectMode::Expressions if key.kind == KeyEventKind::Press => match key.code {
                 KeyCode::Char('I') => self.select_mode = SelectMode::Input,
+                KeyCode::Char('Y') => self.handle_copy_to_input(),
                 KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => {
                     if let Some(i) = self.selected_expression {
                         self.expressions[i].sentences = None;
@@ -42,7 +43,7 @@ impl AppState {
                         self.update_error_msg("Error Playing Audio", err.to_string());
                     }
                 }
-                KeyCode::Char('C') => self.update_last_anki_card().await,
+                KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => self.update_last_anki_card().await,
                 KeyCode::Esc => self.reset_sentences_index(),
                 KeyCode::Up => self.select_prev_sentence(),
                 KeyCode::Down => self.select_next_sentence(),
