@@ -61,7 +61,7 @@ impl AppState {
         self.input.text.clear();
     }
 
-    pub fn confirm_search_query(&mut self) {
+    pub async fn confirm_search_query(&mut self) {
         let user_input = self.input.text.trim().to_lowercase();
         if let Ok(parsed) = user_input.parse::<usize>() {
             if parsed > 5000 {
@@ -84,6 +84,7 @@ impl AppState {
             if !found {
                 // for input search, add logic to display fetched results
                 self.input.mode = InputMode::Search;
+                self.fetch_input_word(user_input).await;
             }
         } else {
             for (i, exp) in self.expressions.iter().enumerate() {
@@ -98,7 +99,23 @@ impl AppState {
             }
 
             self.input.mode = InputMode::Search;
+            self.fetch_input_word(user_input).await;
         }
+    }
+
+    pub async fn fetch_input_word(&mut self, user_input: String) {
+        self.expressions
+            .push(Expression::from(user_input.clone(), None));
+        let i = self.expressions.len() - 1;
+        self.selected_expression = Some(i);
+        self.expressions_state.select(self.selected_expression);
+        // match self.fetch_api(user_input.clone(), i).await {
+        //     Ok(_) => {}
+        //     Err(err) => {
+        //         self.err_msg = Some(format!("Error Fetching {}: {}", &user_input, err));
+        //         self.info.msg = None;
+        //     }
+        // }
     }
 
     pub fn rend_input_box(&self, area: Rect, buf: &mut Buffer) {
