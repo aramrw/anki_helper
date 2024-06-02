@@ -51,7 +51,7 @@ impl AppState {
             SelectMode::Input if key.kind == KeyEventKind::Press => match key.code {
                 KeyCode::Char('P') => self.handle_paste(),
                 KeyCode::Esc => self.select_mode = SelectMode::Expressions,
-                KeyCode::Enter => self.confirm_search_query(),
+                KeyCode::Enter => self.confirm_search_query().await,
                 KeyCode::Backspace => self.delete_char(),
                 KeyCode::Left => self.move_cursor_left(),
                 KeyCode::Right => self.move_cursor_right(),
