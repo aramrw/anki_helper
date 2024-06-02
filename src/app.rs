@@ -49,6 +49,7 @@ pub(crate) struct Expression {
     pub sentences_state: ListState,
     pub selected_sentence: Option<usize>,
     pub definitions: Vec<String>,
+    pub exact_search: bool,
 }
 
 #[derive(Default)]
@@ -141,6 +142,7 @@ impl Expression {
             sentences_state: ListState::default(),
             selected_sentence: Some(0),
             definitions: Vec::new(),
+            exact_search: false,
         }
     }
 
