@@ -133,8 +133,6 @@ impl AppState {
                 ));
             }
         }
-
-        let clone_word = word.clone();
       
         if sentences.is_empty() {
             self.select_mode = SelectMode::Expressions;
@@ -181,6 +179,7 @@ impl AppState {
     }
 }
 
+#[allow(dead_code)]
 pub fn check_note_exists(
     client: AnkiClient,
     current_exp: &str,
