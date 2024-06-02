@@ -49,10 +49,11 @@ struct ConfigJson {
 }
 
 #[derive(Serialize, Deserialize)]
-struct UserNoteFields {
-    sentence: String,
-    sentence_audio: String,
-    image: String,
+pub struct UserNoteFields {
+    pub expression: String,
+    pub sentence: String,
+    pub sentence_audio: String,
+    pub image: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -64,7 +65,7 @@ struct ReqResult {
 impl AppState {
     pub async fn update_last_anki_card(&mut self) {
         let instant = Instant::now();
-        let client: AnkiClient<'_> = AnkiClient::default();
+        let client = &self.client;
 
         if let Some(i) = self.selected_expression {
             let current_word = &self.expressions[i].dict_word.clone();
@@ -73,7 +74,7 @@ impl AppState {
                 Ok(id) => id, // if the parsing succeeds, use the parsed id
                 Err(_) => {
                     // if the parsing fails, find the newest note id
-                    match find_newest_note(&client) {
+                    match find_newest_note(client) {
                         Ok(id) => id,
                         Err(err) => {
                             self.err_msg = Some(format!("Error Finding Card: {}", err));
@@ -110,7 +111,7 @@ impl AppState {
                         &note_id, &current_word, elapsed
                     )
                     .into();
-                    match open_note_gui(&client, note_id) {
+                    match open_note_gui(client, note_id) {
                         Ok(_) => {}
                         Err(err) => {
                             self.err_msg = Some(format!("Error Opening Note GUI: {}", err));
@@ -157,7 +158,7 @@ fn find_note_from_word(
     }
 }
 
-fn find_newest_note(client: &AnkiClient) -> Result<usize, Box<dyn std::error::Error>> {
+pub fn find_newest_note(client: &AnkiClient) -> Result<usize, Box<dyn std::error::Error>> {
     let id_vec = client
         .request(FindNotesRequest {
             query: "is:new".to_string(),
@@ -267,7 +268,7 @@ fn into_update_note_req(
     }
 }
 
-fn read_config() -> Result<UserNoteFields, std::io::Error> {
+pub fn read_config() -> Result<UserNoteFields, std::io::Error> {
     let config_path = "./config.json";
     let data = std::fs::read(config_path)?;
     let config: ConfigJson = serde_json::from_slice(&data)?;
