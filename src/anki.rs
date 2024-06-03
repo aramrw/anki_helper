@@ -48,6 +48,9 @@ struct Request<P: AnkiParams> {
 #[derive(Serialize, Deserialize)]
 struct ConfigJson {
     fields: UserNoteFields,
+pub struct ConfigJson {
+    pub fields: UserNoteFields,
+    pub media_path: String,
 }
 
 #[derive(Serialize, Deserialize)]
