@@ -226,6 +226,15 @@ fn format_local_audio_field(field_name: &str, url: &str) -> HashMap<String, Stri
     map
 }
 
+fn write_audio_bytes_file(
+    media_dir: &str,
+    filename: &str,
+    bytes: &Vec<u8>,
+) -> std::io::Result<String> {
+    let media_dir = Path::new(&media_dir);
+    let file_path = media_dir.join(filename);
+    std::fs::write(file_path, bytes).unwrap();
+    let audio_url = format!("[sound:{}]", filename);
     Ok(audio_url)
 }
 
