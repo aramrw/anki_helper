@@ -131,6 +131,8 @@ impl AppState {
                 } else {
                     None
                 };
+
+
                 sentences.push(Sentence::from(
                     &ex.sentence,
                     &ex.sound_url,
@@ -144,14 +146,14 @@ impl AppState {
         if sentences.is_empty() {
             self.select_mode = SelectMode::Expressions;
             if self.expressions[index].exact_search {
-            self.info.msg = format!("No Exact Sentences found for {}", &word).into();
+                self.info.msg = format!("No Exact Sentences found for {}", &word).into();
             } else {
-            self.info.msg = format!("No Sentences found for {}", &word).into();
+                self.info.msg = format!("No Sentences found for {}", &word).into();
             }
             return Ok(());
         }
 
-        self.expressions[index].sentences = Some(sentences);
+        self.expressions[index].sentences = Some(sentences.clone());
         self.err_msg = None;
         if self.expressions[index].exact_search {
             self.info.msg = format!(
@@ -168,6 +170,7 @@ impl AppState {
             )
             .into();
         }
+
         Ok(())
     }
 
@@ -214,7 +217,7 @@ pub fn check_note_exists(
     });
 
     let note = note_info?;
-    let exp_html = note.last().unwrap().fields.get(&config.expression).unwrap();
+    let exp_html = note.last().unwrap().fields.get(&config.fields.expression).unwrap();
 
     // extract text from html and join them
 
