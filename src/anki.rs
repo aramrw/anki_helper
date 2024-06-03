@@ -220,6 +220,11 @@ fn write_audio_bytes_file(filename: &str, bytes: &Vec<u8>) -> std::io::Result<St
         file_path.to_string_lossy(),
         filename
     );
+fn format_local_audio_field(field_name: &str, url: &str) -> HashMap<String, String> {
+    let mut map = HashMap::new();
+    map.insert(field_name.to_string(), url.to_string());
+    map
+}
 
     Ok(audio_url)
 }
