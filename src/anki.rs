@@ -4,6 +4,7 @@ use anki_bridge::notes_actions::find_notes::FindNotesRequest;
 use anki_bridge::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::Path;
 use std::time::Instant;
 
 #[derive(Serialize, Deserialize)]
@@ -11,6 +12,7 @@ struct Note {
     id: u64,
     fields: HashMap<String, String>,
     audio: Vec<Media>,
+    audio: Option<Vec<Media>>,
     picture: Option<Vec<Media>>,
 }
 
