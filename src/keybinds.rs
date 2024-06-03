@@ -43,7 +43,9 @@ impl AppState {
                         self.update_error_msg("Error Playing Audio", err.to_string());
                     }
                 }
-                KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => self.update_last_anki_card().await,
+                KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    self.update_last_anki_card().await
+                }
                 KeyCode::Esc => self.reset_sentences_index(),
                 KeyCode::Up => self.select_prev_sentence(),
                 KeyCode::Down => self.select_next_sentence(),
@@ -119,7 +121,6 @@ impl AppState {
             }
         }
     }
-
     pub fn select_prev_exp(&mut self) {
         let i = match self.expressions_state.selected() {
             Some(i) => {
