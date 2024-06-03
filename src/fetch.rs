@@ -153,7 +153,7 @@ impl AppState {
             return Ok(());
         }
 
-        self.expressions[index].sentences = Some(sentences.clone());
+        self.expressions[index].sentences = Some(sentences);
         self.err_msg = None;
         if self.expressions[index].exact_search {
             self.info.msg = format!(
