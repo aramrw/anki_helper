@@ -36,7 +36,19 @@ impl AppState {
         if let Some(i) = self.selected_expression {
             let current_word = self.expressions[i].dict_word.clone();
 
-            match self.fetch_api(current_word.clone(), i).await {
+            let format_url = if self.expressions[i].exact_search {
+                format!(
+                "https://api.immersionkit.com/look_up_dictionary?keyword={}&exact=true&sort=shortness",
+                &current_word
+            )
+            } else {
+                format!(
+                    "https://api.immersionkit.com/look_up_dictionary?keyword={}&sort=shortness",
+                    &current_word
+                )
+            };
+
+            match self.fetch_api(current_word.clone(), i, format_url).await {
                 Ok(_) => {}
                 Err(err) => {
                     self.err_msg = Some(format!("Error Fetching {}: {}", &current_word, err));
