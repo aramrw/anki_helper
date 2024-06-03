@@ -34,7 +34,7 @@ pub struct Info {
     pub found: Option<usize>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct Sentence {
     pub sentence: String,
     pub audio_url: String,
