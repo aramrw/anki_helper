@@ -95,21 +95,9 @@ impl AppState {
         &mut self,
         word: String,
         index: usize,
+        format_url: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let instant = Instant::now();
-
-        let mut format_url = String::new();
-        if self.expressions[index].exact_search {
-            format_url = format!(
-                "https://api.immersionkit.com/look_up_dictionary?keyword={}&exact=true&sort=shortness",
-                &word
-            );
-        } else {
-            format_url = format!(
-                "https://api.immersionkit.com/look_up_dictionary?keyword={}&sort=shortness",
-                &word
-            );
-        }
 
         let resp = reqwest::get(&format_url)
             .await?
