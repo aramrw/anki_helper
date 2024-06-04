@@ -96,7 +96,6 @@ impl AppState {
         index: usize,
         format_url: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
-
         let resp = reqwest::get(&format_url)
             .await?
             .json::<JsonSchema>()
@@ -109,6 +108,11 @@ impl AppState {
                     self.expressions[index]
                         .definitions
                         .extend(section.glossary_list);
+                    if !self.expressions[index].readings.contains(&section.reading)
+                        && self.expressions[index].dict_word != section.reading
+                    {
+                        self.expressions[index].readings.push(section.reading);
+                    }
                 }
             }
             for ex in item.examples {
@@ -117,7 +121,6 @@ impl AppState {
                 } else {
                     None
                 };
-
 
                 sentences.push(Sentence::from(
                     &ex.sentence,
@@ -186,7 +189,12 @@ pub fn check_note_exists(
     });
 
     let note = note_info?;
-    let exp_html = note.last().unwrap().fields.get(&config.fields.expression).unwrap();
+    let exp_html = note
+        .last()
+        .unwrap()
+        .fields
+        .get(&config.fields.expression)
+        .unwrap();
 
     // extract text from html and join them
 
