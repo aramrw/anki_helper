@@ -58,7 +58,7 @@ impl AppState {
 
             for word in line.split_whitespace() {
                 self.expressions
-                    .push(Expression::from(word.to_string(), None));
+                    .push(Expression::from(word.to_string(), None, None));
             }
         }
 

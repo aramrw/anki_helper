@@ -99,7 +99,7 @@ impl AppState {
 
     pub async fn fetch_input_word(&mut self, user_input: String) {
         self.expressions
-            .push(Expression::from(user_input.clone(), None));
+            .push(Expression::from(user_input.clone(), None, None));
         let i = self.expressions.len() - 1;
         self.selected_expression = Some(i);
         self.expressions_state.select(self.selected_expression);
