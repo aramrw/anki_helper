@@ -19,6 +19,38 @@ impl AppState {
         None
     }
 
+    pub fn delete_word_from_file(&mut self, to_del_word: &str) -> io::Result<()> {
+        let file = File::open("words.txt")?;
+        let reader = BufReader::new(file);
+
+        let temp_file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open("temp.txt")?;
+        let mut writer = BufWriter::new(temp_file);
+
+        for line in reader.lines() {
+            let line = line?;
+            let new_line = if line.contains(to_del_word) {
+                line.replace(to_del_word, "")
+            } else {
+                line
+            };
+            writeln!(writer, "{}", new_line)?;
+        }
+
+        std::fs::remove_file("words.txt")?;
+        std::fs::rename("temp.txt", "words.txt")?;
+        if let Some(i) = self.selected_expression {
+            if self.expressions[i].dict_word.trim() == to_del_word.trim() {
+                self.expressions.remove(i);
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn read_words_file(&mut self) -> io::Result<()> {
         let file = File::open("words.txt")?;
         let reader = BufReader::new(file);
