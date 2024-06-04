@@ -125,7 +125,13 @@ impl AppState {
                     )
                     .into();
                     match open_note_gui(client, note_id) {
-                        Ok(_) => {}
+                        Ok(_) => match self.delete_word_from_file(current_word) {
+                            Ok(_) => {}
+                            Err(err) => {
+                                self.err_msg =
+                                    Some(format!("Error Deleting Word from File: {}", err))
+                            }
+                        },
                         Err(err) => {
                             self.err_msg = Some(format!("Error Opening Note GUI: {}", err));
                         }
