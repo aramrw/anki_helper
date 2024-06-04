@@ -103,13 +103,6 @@ impl AppState {
         let i = self.expressions.len() - 1;
         self.selected_expression = Some(i);
         self.expressions_state.select(self.selected_expression);
-        // match self.fetch_api(user_input.clone(), i).await {
-        //     Ok(_) => {}
-        //     Err(err) => {
-        //         self.err_msg = Some(format!("Error Fetching {}: {}", &user_input, err));
-        //         self.info.msg = None;
-        //     }
-        // }
     }
 
     pub fn rend_input_box(&self, area: Rect, buf: &mut Buffer) {
