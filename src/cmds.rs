@@ -2,6 +2,9 @@ use crate::app::*;
 use arboard::Clipboard;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
+use std::fs::{File, OpenOptions};
+use std::io::{self, prelude::*, BufReader, BufWriter};
+use std::time::Instant;
 
 impl AppState {
     pub fn get_current_sentence(&self) -> Option<Sentence> {
