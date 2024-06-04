@@ -13,6 +13,15 @@ impl AppState {
             SelectMode::Expressions if key.kind == KeyEventKind::Press => match key.code {
                 KeyCode::Char('I') => self.select_mode = SelectMode::Input,
                 KeyCode::Char('Y') => self.handle_copy_to_input(),
+                KeyCode::Char('D') => {
+                    if let Some(i) = self.selected_expression {
+                        let current_wrd = &self.expressions[i].dict_word.clone();
+                        match self.delete_word_from_file(current_wrd) {
+                            Ok(_) => self.info.msg = format!("Deleted: {} from words.txt", &current_wrd).into(),
+                            Err(err) => self.update_error_msg("Err Deleting {} from words.txt: {}", err.to_string()),
+                        }
+                    }
+                }
                 KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => {
                     if let Some(i) = self.selected_expression {
                         self.expressions[i].sentences = None;
