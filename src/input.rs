@@ -64,27 +64,21 @@ impl AppState {
     pub async fn confirm_search_query(&mut self) {
         let user_input = self.input.text.trim().to_lowercase();
         if let Ok(parsed) = user_input.parse::<usize>() {
+            // return if searching for id
             if parsed > 5000 {
                 self.input.mode = InputMode::FindID;
                 self.select_mode = SelectMode::Expressions;
                 return;
             }
 
-            let mut found = false;
             for (i, _) in self.expressions.iter().enumerate() {
                 if parsed == i {
                     self.select_mode = SelectMode::Expressions;
                     self.expressions_state.select(Some(i));
                     self.selected_expression = Some(i);
                     self.reset_input();
-                    found = true;
                     break;
                 }
-            }
-            if !found {
-                // for input search, add logic to display fetched results
-                self.input.mode = InputMode::Search;
-                self.fetch_input_word(user_input).await;
             }
         } else {
             for (i, exp) in self.expressions.iter().enumerate() {
