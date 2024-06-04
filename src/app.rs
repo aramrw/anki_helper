@@ -45,6 +45,7 @@ pub(crate) struct Sentence {
 
 pub(crate) struct Expression {
     pub dict_word: String,
+    pub readings: Vec<String>,
     pub sentences: Option<Vec<Sentence>>,
     pub sentences_state: ListState,
     pub selected_sentence: Option<usize>,
@@ -135,9 +136,10 @@ impl Sentence {
 }
 
 impl Expression {
-    pub fn from(dict_word: String, sentences: Option<Vec<Sentence>>) -> Self {
+    pub fn from(dict_word: String, reading: Option<Vec<String>>, sentences: Option<Vec<Sentence>>) -> Self {
         Self {
             dict_word,
+            readings: Vec::new(),
             sentences,
             sentences_state: ListState::default(),
             selected_sentence: Some(0),
