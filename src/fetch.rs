@@ -4,7 +4,6 @@ use anki_bridge::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Cursor;
-use std::time::Instant;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct CategoryCount {
@@ -97,7 +96,6 @@ impl AppState {
         index: usize,
         format_url: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let instant = Instant::now();
 
         let resp = reqwest::get(&format_url)
             .await?
@@ -142,23 +140,6 @@ impl AppState {
         }
 
         self.expressions[index].sentences = Some(sentences);
-        self.err_msg = None;
-        if self.expressions[index].exact_search {
-            self.info.msg = format!(
-                "Fetched Exact Sentences for {} in {}s",
-                &word,
-                instant.elapsed().as_secs()
-            )
-            .into();
-        } else {
-            self.info.msg = format!(
-                "Fetched Sentences For {} in {}s",
-                &word,
-                instant.elapsed().as_secs()
-            )
-            .into();
-        }
-
         Ok(())
     }
 
