@@ -178,7 +178,8 @@ impl AppState {
                 .block(
                     Block::bordered()
                         .title(format!(
-                            "{}'s Sentences",
+                            "({}) {}'s Sentences",
+                            &self.expressions[i].readings.join("・"),
                             &self.expressions[i].dict_word.clone()
                         ))
                         .style(match has_sentences {
