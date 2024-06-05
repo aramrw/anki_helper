@@ -148,29 +148,8 @@ impl AppState {
         ]);
         let [exp_kbs_area, sentences_kbs_area, input_kbs_area] =
             keybinds_horizontal.areas(keybinds_area);
+        self.rend_keybinds(exp_kbs_area, buf);
 
-        let kb_titles: Vec<ListItem> = self
-            .keybinds
-            .titles
-            .iter()
-            .enumerate()
-            .map(|(i, kb)| Keybinds::to_list_item(kb, i))
-            .collect();
-
-        let kbs = List::new(kb_titles)
-            .block(
-                Block::bordered()
-                    .title("Expressions")
-                    .style(Style::default().yellow().bold()),
-            )
-            .highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .add_modifier(Modifier::REVERSED)
-                    .fg(Color::White),
-            );
-
-        StatefulWidget::render(kbs, exp_kbs_area, buf, &mut self.keybinds.state);
     }
 
     fn rend_main(&mut self, area: Rect, buf: &mut Buffer) {

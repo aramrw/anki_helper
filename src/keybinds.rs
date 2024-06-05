@@ -3,7 +3,7 @@ use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind, KeyModi
 use crate::app::{AppState, Pages, SelectMode};
 use ratatui::{
     prelude::*,
-    widgets::{Block, ListItem, ListState, Paragraph},
+    widgets::{Block, ListItem, ListState, Paragraph, List},
 };
 use std::io;
 
@@ -194,6 +194,31 @@ impl AppState {
             .block(Block::bordered().title("Help"))
             .centered()
             .render(area, buf);
+    }
+
+    pub fn rend_keybinds(&mut self, area: Rect, buf: &mut Buffer) {
+        let kb_titles: Vec<ListItem> = self
+            .keybinds
+            .titles
+            .iter()
+            .enumerate()
+            .map(|(i, kb)| Keybinds::to_list_item(kb, i))
+            .collect();
+
+        let kbs = List::new(kb_titles)
+            .block(
+                Block::bordered()
+                    .title("Expressions")
+                    .style(Style::default().yellow().bold()),
+            )
+            .highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::REVERSED)
+                    .fg(Color::White),
+            );
+
+        StatefulWidget::render(kbs, area, buf, &mut self.keybinds.state);
     }
 }
 
