@@ -5,6 +5,14 @@ use std::io;
 //use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
+pub enum Pages {
+    #[default]
+    Main,
+    Help,
+    Split
+}
+
+#[derive(Default)]
 pub enum SelectMode {
     #[default]
     Expressions,
