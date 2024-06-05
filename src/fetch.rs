@@ -104,6 +104,13 @@ struct MassifResults {
     text: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct MassifJsonSchema {
+    hits: u16,
+    hits_limited: bool,
+    results: Vec<MassifResults>,
+}
+
 use crate::app::*;
 
 impl AppState {
