@@ -102,20 +102,32 @@ impl AppState {
                 }
             };
 
-            let filename = url_into_file_name(&sentence.audio_url);
-            let local_audio_url = if let Some(audio_data) = &sentence.audio_data {
-                Some(write_audio_bytes_file(&config.media_path, &filename, audio_data).unwrap())
+            let (filename, local_audio_url) = if let Some(audio_url) = &sentence.audio_url {
+                let filename = url_into_file_name(audio_url);
+                let local_audio_url = if let Some(audio_data) = &sentence.audio_data {
+                    Some(write_audio_bytes_file(&config.media_path, &filename, audio_data).unwrap())
+                } else {
+                    None
+                };
+
+                (Some(filename), local_audio_url)
             } else {
-                None
+                (None, None)
             };
 
-            let req: Request<UpdateNoteParams> = into_update_note_req(
-                note_id as u64,
-                &config.fields,
-                sentence,
-                filename,
-                local_audio_url,
-            );
+            let req: Request<UpdateNoteParams> = match filename {
+                Some(filename) => {
+                    into_update_note_req(
+                        note_id as u64,
+                        &config.fields,
+                        sentence,
+                        filename,
+                        local_audio_url,
+                    )
+                },
+                None => into_update_only_sentence_req(note_id as u64, &config.fields, sentence),
+            };
+
             match post_note_update(req).await {
                 Ok(_) => {
                     let elapsed = instant.elapsed().as_secs();
@@ -240,6 +252,28 @@ fn write_audio_bytes_file(
     Ok(audio_url)
 }
 
+fn into_update_only_sentence_req(
+    id: u64,
+    anki_fields: &UserNoteFields,
+    sentence: Sentence,
+) -> Request<UpdateNoteParams> {
+    let sentence_field = format_sentence_field(&anki_fields.sentence, &sentence.sentence);
+    let mut note = Note {
+        id,
+        fields: { sentence_field },
+        audio: None,
+        picture: None,
+    };
+
+    let params = UpdateNoteParams { note };
+
+    Request {
+        action: "updateNoteFields".to_string(),
+        version: 6,
+        params,
+    }
+}
+
 fn into_update_note_req(
     id: u64,
     anki_fields: &UserNoteFields,
@@ -284,7 +318,7 @@ fn into_update_note_req(
         note.fields.extend(audio_field);
     } else {
         note.audio = Some(vec![Media {
-            url: sentence.audio_url,
+            url: sentence.audio_url.unwrap(),
             filename,
             skipHash: None,
             fields: vec![anki_fields.sentence_audio.clone()],
