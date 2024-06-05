@@ -83,7 +83,6 @@ struct Main {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct JsonSchema {
 struct IKJsonSchema {
     data: Vec<Main>,
 }
@@ -114,7 +113,7 @@ struct MassifJsonSchema {
 use crate::app::*;
 
 impl AppState {
-    pub async fn fetch_api(
+    pub async fn fetch_massif_api(
         &mut self,
         word: String,
         index: usize,
@@ -122,7 +121,33 @@ impl AppState {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let resp = reqwest::get(&format_url)
             .await?
-            .json::<JsonSchema>()
+            .json::<MassifJsonSchema>()
+            .await?;
+
+        let mut sentences: Vec<Sentence> = Vec::new();
+        for item in resp.results {
+            sentences.push(Sentence::from(
+                &item.text,
+                None,
+                None,
+                None,
+                &item.sample_source.title,
+            ));
+        }
+
+        self.expressions[index].sentences = Some(sentences);
+        Ok(())
+    }
+
+    pub async fn fetch_ik_api(
+        &mut self,
+        word: String,
+        index: usize,
+        format_url: String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let resp = reqwest::get(&format_url)
+            .await?
+            .json::<IKJsonSchema>()
             .await?;
 
         let mut sentences: Vec<Sentence> = Vec::new();
@@ -148,7 +173,7 @@ impl AppState {
 
                 sentences.push(Sentence::from(
                     &ex.sentence,
-                    &ex.sound_url,
+                    Some(ex.sound_url),
                     None,
                     image_url,
                     &ex.deck_name,
@@ -157,12 +182,14 @@ impl AppState {
         }
 
         if sentences.is_empty() {
-            self.select_mode = SelectMode::Expressions;
-            if self.expressions[index].exact_search {
-                self.info.msg = format!("No Exact Sentences found for {}", &word).into();
-            } else {
-                self.info.msg = format!("No Sentences found for {}", &word).into();
-            }
+            // self.select_mode = SelectMode::Expressions;
+            // if self.expressions[index].exact_search {
+            //     self.info.msg = format!("No Exact Sentences found for {}", &word).into();
+            // } else {
+            //     self.info.msg = format!("No Sentences found for {}", &word).into();
+            // }
+
+            self.fetch_massif_sentences().await;
             return Ok(());
         }
 
@@ -175,14 +202,17 @@ impl AppState {
             if let Some(sent_index) = self.expressions[exp_index].selected_sentence {
                 let sentence =
                     &mut self.expressions[exp_index].sentences.as_mut().unwrap()[sent_index];
+
                 let audio_data = if let Some(audio_data) = &sentence.audio_data {
                     audio_data.clone()
                 } else {
-                    let resp = reqwest::get(&sentence.audio_url).await?;
+                    let audio_url = sentence.audio_url.clone().ok_or("Audio URL not found")?;
+                    let resp = reqwest::get(&audio_url).await?;
                     let audio_data = resp.bytes().await?.to_vec();
                     sentence.audio_data = Some(audio_data.clone());
                     audio_data
                 };
+
                 tokio::task::spawn_blocking(move || {
                     let (_stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
                     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
