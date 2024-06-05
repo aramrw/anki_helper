@@ -80,6 +80,14 @@ impl AppState {
                 _ => {}
             },
             _ => {}
+            _ => match key.code {
+                KeyCode::Char('H') => {
+                    self.selected_page = Pages::Help;
+                }
+                KeyCode::Char('M') => self.selected_page = Pages::Main,
+                KeyCode::Char('S') => {}
+                _ => {}
+            },
         }
 
         Ok(())
