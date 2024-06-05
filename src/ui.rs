@@ -17,6 +17,23 @@ impl Widget for &mut AppState {
         self.rend_help_area(help_area, buf);
         self.rend_main(main_area, buf);
         self.rend_info_area(info_area, buf)
+        match self.selected_page {
+            Pages::Main => {
+                let layout = Layout::vertical([
+                    Constraint::Length(3),
+                    Constraint::Min(10),
+                    Constraint::Length(3),
+                ]);
+                let [help_area, main_area, info_area] = layout.areas(area);
+                self.rend_help_area(help_area, buf);
+                self.rend_main(main_area, buf);
+                self.rend_info_area(info_area, buf)
+            }
+            Pages::Help => {
+                self.rend_help_page(area, buf);
+            }
+            Pages::Split => {}
+        }
     }
 }
 
