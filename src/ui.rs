@@ -1,5 +1,4 @@
 use crate::app::{AppState, Pages, SelectMode, Sentence};
-use crate::keybinds::Keybinds;
 use ratatui::{
     prelude::*,
     widgets::{Block, List, ListItem, ListState, /* Padding */ Paragraph},
@@ -22,7 +21,9 @@ impl Widget for &mut AppState {
             Pages::Help => {
                 self.rend_help_page(area, buf);
             }
-            Pages::Split => {}
+            Pages::Splice => {
+                self.rend_splice_page(area, buf);
+            }
         }
     }
 }
