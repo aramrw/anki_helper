@@ -84,6 +84,7 @@ struct Main {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct JsonSchema {
+struct IKJsonSchema {
     data: Vec<Main>,
 }
 
