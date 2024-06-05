@@ -1,6 +1,5 @@
 use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 //use ratatui::prelude::*;
-use crate::app::{AppState, SelectMode};
 use crate::app::{AppState, Pages, SelectMode};
 use ratatui::{
     prelude::*,
@@ -26,8 +25,14 @@ impl AppState {
                     if let Some(i) = self.selected_expression {
                         let current_wrd = &self.expressions[i].dict_word.clone();
                         match self.delete_word_from_file(current_wrd) {
-                            Ok(_) => self.info.msg = format!("Deleted: {} from words.txt", &current_wrd).into(),
-                            Err(err) => self.update_error_msg("Err Deleting {} from words.txt: {}", err.to_string()),
+                            Ok(_) => {
+                                self.info.msg =
+                                    format!("Deleted: {} from words.txt", &current_wrd).into()
+                            }
+                            Err(err) => self.update_error_msg(
+                                "Err Deleting {} from words.txt: {}",
+                                err.to_string(),
+                            ),
                         }
                     }
                 }
@@ -79,7 +84,6 @@ impl AppState {
                 KeyCode::Char(input_char) => self.enter_char(input_char),
                 _ => {}
             },
-            _ => {}
             _ => match key.code {
                 KeyCode::Char('H') => {
                     self.selected_page = Pages::Help;
@@ -179,59 +183,6 @@ impl AppState {
         self.expressions_state.select(Some(i));
     }
 
-    pub fn rend_keybinds(&self, area: Rect, buf: &mut Buffer) {
-        let (msg, style) = match self.select_mode {
-            SelectMode::Expressions => (
-                vec![
-                    "(".into(),
-                    "<Up> ".light_yellow().bold(),
-                    "Prev ".yellow(),
-                    "| ".into(),
-                    "<Down> ".light_yellow().bold(),
-                    "Next".yellow(),
-                    ") ".into(),
-                    "<Enter> ".light_green().bold(),
-                    "Sentence Selection ".green(),
-                ],
-                Style::default(),
-            ),
-            SelectMode::Sentences => (
-                vec![
-                    "<Esc> ".light_red().bold(),
-                    "Back ".red(),
-                    "(".into(),
-                    "<Up> ".light_yellow().bold(),
-                    "Prev ".yellow(),
-                    "| ".into(),
-                    "<Down> ".light_yellow().bold(),
-                    "Next ".yellow(),
-                    ") ".into(),
-                    "<P> ".light_blue().bold(),
-                    "Play Audio ".blue(),
-                    "<C> ".light_green().bold(),
-                    "Update Card".green(),
-                ],
-                Style::default(),
-            ),
-            SelectMode::Input => (
-                vec![
-                    "<Esc> ".light_red().bold(),
-                    "Back ".red(),
-                    "(".into(),
-                    "<Left> ".light_yellow().bold(),
-                    "Prev ".yellow(),
-                    "| ".into(),
-                    "<Right> ".light_yellow().bold(),
-                    "Next ".yellow(),
-                    ") ".into(),
-                    "<P> ".light_blue().bold(),
-                    "Paste ".into(),
-                    "<Enter> ".light_blue().bold(),
-                    "Confirm ".into(),
-                ],
-                Style::default(),
-            ),
-        };
     pub fn rend_main_keybinds(&self, area: Rect, buf: &mut Buffer) {
         let (msg, style) = (
             vec!["<H> ".light_yellow().bold(), "Help Page".into()],
@@ -240,8 +191,34 @@ impl AppState {
 
         let text = Text::from(Line::from(msg).patch_style(style));
         Paragraph::new(text)
-            .block(Block::bordered().title("Keybinds"))
+            .block(Block::bordered().title("Help"))
             .centered()
             .render(area, buf);
+    }
+}
+
+impl Keybinds {
+    pub fn to_list_item(text: &str, i: usize) -> ListItem {
+        let line = Line::styled(format!("{}. {}", i, text), Color::White);
+        ListItem::new(line)
+    }
+
+    pub fn new() -> Self {
+        Self {
+            titles: ["<I>", "<Y>", "<D>"]
+                .iter()
+                .map(|kb| kb.to_string())
+                .collect(),
+            selected_kb: 0,
+            state: ListState::default(),
+            abouts: [
+                "Selects the input box.",
+                "Copies selected Expression to Input Box.",
+                "Deletes selected Expression",
+            ]
+            .iter()
+            .map(|ab| ab.to_string())
+            .collect(),
+        }
     }
 }
