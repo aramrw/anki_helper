@@ -88,6 +88,14 @@ struct IKJsonSchema {
     data: Vec<Main>,
 }
 
+// Massif Schema (shoutout massif... way simpler lol)
+#[derive(Serialize, Deserialize, Debug)]
+struct MassifSampleSource {
+    publish_date: String,
+    title: String,
+    url: String,
+}
+
 use crate::app::*;
 
 impl AppState {
