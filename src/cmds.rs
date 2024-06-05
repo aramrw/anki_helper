@@ -67,6 +67,42 @@ impl AppState {
         Ok(())
     }
 
+    pub async fn fetch_massif_sentences(&mut self) {
+        if let Some(i) = self.selected_expression {
+            let instant = Instant::now();
+            let current_word = self.expressions[i].dict_word.clone();
+            let format_url = format!("https://massif.la/ja/search?q={}&fmt=json", &current_word);
+
+            match self
+                .fetch_massif_api(current_word.clone(), i, format_url)
+                .await
+            {
+                Ok(_) => {
+                    self.err_msg = None;
+                    if self.expressions[i].exact_search {
+                        self.info.msg = format!(
+                            "Fetched Exact Sentences for {} in {}s",
+                            &current_word,
+                            instant.elapsed().as_secs()
+                        )
+                        .into();
+                    } else {
+                        self.info.msg = format!(
+                            "Fetched Sentences For {} in {}s",
+                            &current_word,
+                            instant.elapsed().as_secs()
+                        )
+                        .into();
+                    }
+                }
+                Err(err) => {
+                    self.err_msg = Some(format!("Error Fetching {}: {}", &current_word, err));
+                    self.info.msg = None;
+                }
+            }
+        }
+    }
+
     pub async fn fetch_sentences(&mut self) {
         if let Some(i) = self.selected_expression {
             let instant = Instant::now();
@@ -84,7 +120,7 @@ impl AppState {
                 )
             };
 
-            match self.fetch_api(current_word.clone(), i, format_url).await {
+            match self.fetch_ik_api(current_word.clone(), i, format_url).await {
                 Ok(_) => {
                     self.err_msg = None;
                     if self.expressions[i].exact_search {
