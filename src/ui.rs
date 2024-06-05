@@ -1,22 +1,12 @@
+use crate::app::{AppState, Pages, SelectMode, Sentence};
+use crate::keybinds::Keybinds;
 use ratatui::{
     prelude::*,
-    widgets::{Block, List, ListItem, /* Padding */ Paragraph},
+    widgets::{Block, List, ListItem, ListState, /* Padding */ Paragraph},
 };
-
-use crate::app::{AppState, SelectMode, Sentence};
 
 impl Widget for &mut AppState {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = Layout::vertical([
-            Constraint::Length(3),
-            Constraint::Min(10),
-            Constraint::Length(3),
-        ]);
-        let [help_area, main_area, info_area] = layout.areas(area);
-
-        self.rend_help_area(help_area, buf);
-        self.rend_main(main_area, buf);
-        self.rend_info_area(info_area, buf)
         match self.selected_page {
             Pages::Main => {
                 let layout = Layout::vertical([
@@ -45,7 +35,6 @@ impl AppState {
         let [msg_area, err_area] = horizontal.areas(area);
 
         let (msg, style) = match &self.info.msg {
-            Some(msg) => (msg.clone(), Style::default().bold().fg(Color::Blue).add_modifier(Modifier::RAPID_BLINK)),
             Some(msg) => (
                 msg.clone(),
                 Style::default()
@@ -146,6 +135,42 @@ impl AppState {
             self.rend_media_title(top, buf);
             self.rend_sentence_defs(top_middle, buf)
         }
+    }
+
+    fn rend_help_page(&mut self, area: Rect, buf: &mut Buffer) {
+        let vertical = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
+
+        let [keybinds_area, about_area] = vertical.areas(area);
+        let keybinds_horizontal = Layout::horizontal([
+            Constraint::Percentage(35),
+            Constraint::Percentage(35),
+            Constraint::Percentage(30),
+        ]);
+        let [exp_kbs_area, sentences_kbs_area, input_kbs_area] =
+            keybinds_horizontal.areas(keybinds_area);
+
+        let kb_titles: Vec<ListItem> = self
+            .keybinds
+            .titles
+            .iter()
+            .enumerate()
+            .map(|(i, kb)| Keybinds::to_list_item(kb, i))
+            .collect();
+
+        let kbs = List::new(kb_titles)
+            .block(
+                Block::bordered()
+                    .title("Expressions")
+                    .style(Style::default().yellow().bold()),
+            )
+            .highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::REVERSED)
+                    .fg(Color::White),
+            );
+
+        StatefulWidget::render(kbs, exp_kbs_area, buf, &mut self.keybinds.state);
     }
 
     fn rend_main(&mut self, area: Rect, buf: &mut Buffer) {
