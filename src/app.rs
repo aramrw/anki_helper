@@ -87,6 +87,8 @@ impl AppState {
             info: Info::default(),
             input: InputBox::default(),
             client: AnkiClient::default(),
+            keybinds: Keybinds::new(),
+            selected_page: Pages::Main,
         }
     }
 }
