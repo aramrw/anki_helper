@@ -2,6 +2,7 @@ use anki_bridge::AnkiClient;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::{prelude::*, widgets::*};
 use std::io;
+use crate::keybinds::Keybinds;
 //use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
@@ -70,7 +71,6 @@ pub(crate) struct AppState {
     pub err_msg: Option<String>,
     pub info: Info,
     pub input: InputBox,
-    pub client: AnkiClient<'static>
     pub client: AnkiClient<'static>,
     pub keybinds: Keybinds,
     pub selected_page: Pages,
@@ -149,7 +149,7 @@ impl Sentence {
 }
 
 impl Expression {
-    pub fn from(dict_word: String, reading: Option<Vec<String>>, sentences: Option<Vec<Sentence>>) -> Self {
+    pub fn from(dict_word: String, _reading: Option<Vec<String>>, sentences: Option<Vec<Sentence>>) -> Self {
         Self {
             dict_word,
             readings: Vec::new(),
