@@ -10,7 +10,7 @@ pub enum Pages {
     #[default]
     Main,
     Help,
-    Split
+    Splice
 }
 
 #[derive(Default)]
@@ -46,7 +46,7 @@ pub struct Info {
 #[derive(Clone, Debug)]
 pub(crate) struct Sentence {
     pub sentence: String,
-    pub audio_url: String,
+    pub audio_url: Option<String>,
     pub audio_data: Option<Vec<u8>>,
     pub img_url: Option<String>,
     pub media_title: String,
@@ -128,14 +128,14 @@ impl AppState {
 impl Sentence {
     pub fn from(
         sentence: &str,
-        audio_url: &str,
+        audio_url: Option<String>,
         audio_data: Option<Vec<u8>>,
         img_url: Option<String>,
         media_title: &str,
     ) -> Self {
         Self {
             sentence: sentence.to_string(),
-            audio_url: audio_url.to_string(),
+            audio_url,
             audio_data,
             img_url,
             media_title: media_title.to_string(),
