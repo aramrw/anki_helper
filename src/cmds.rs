@@ -43,6 +43,8 @@ impl AppState {
         if let Some(i) = self.selected_expression {
             if self.expressions[i].dict_word.trim() == to_del_word.trim() {
                 self.expressions.remove(i);
+                self.selected_expression = Some(i - 1);
+                self.expressions_state.select(Some(i - 1));
             }
         }
 
