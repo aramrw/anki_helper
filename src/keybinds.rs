@@ -1,11 +1,20 @@
 use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 //use ratatui::prelude::*;
 use crate::app::{AppState, SelectMode};
+use crate::app::{AppState, Pages, SelectMode};
 use ratatui::{
     prelude::*,
-    widgets::{Block, Paragraph},
+    widgets::{Block, ListItem, ListState, Paragraph},
 };
 use std::io;
+
+#[derive(Default)]
+pub struct Keybinds {
+    pub titles: Vec<String>,
+    pub selected_kb: usize,
+    pub state: ListState,
+    pub abouts: Vec<String>,
+}
 
 impl AppState {
     pub async fn handle_keybinds(&mut self, key: KeyEvent) -> io::Result<()> {
