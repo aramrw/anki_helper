@@ -81,6 +81,7 @@ impl AppState {
                 }
             }
         } else {
+            // check if word grep
             for (i, exp) in self.expressions.iter().enumerate() {
                 let dict_word = exp.dict_word.trim().to_lowercase().replace('\n', "");
                 if dict_word == user_input {
@@ -93,16 +94,14 @@ impl AppState {
             }
 
             self.input.mode = InputMode::Search;
-            self.fetch_input_word(user_input).await;
+            self.select_mode = SelectMode::Expressions;
+            self.expressions
+                .push(Expression::from(user_input.clone(), None, None));
+            let i = self.expressions.len() - 1;
+            self.expressions_state.select(Some(i));
+            self.selected_expression = Some(i);
+            self.reset_input();
         }
-    }
-
-    pub async fn fetch_input_word(&mut self, user_input: String) {
-        self.expressions
-            .push(Expression::from(user_input.clone(), None, None));
-        let i = self.expressions.len() - 1;
-        self.selected_expression = Some(i);
-        self.expressions_state.select(self.selected_expression);
     }
 
     pub fn rend_input_box(&self, area: Rect, buf: &mut Buffer) {
