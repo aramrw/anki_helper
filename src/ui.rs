@@ -46,6 +46,13 @@ impl AppState {
 
         let (msg, style) = match &self.info.msg {
             Some(msg) => (msg.clone(), Style::default().bold().fg(Color::Blue).add_modifier(Modifier::RAPID_BLINK)),
+            Some(msg) => (
+                msg.clone(),
+                Style::default()
+                    .bold()
+                    .fg(Color::Blue)
+                    .add_modifier(Modifier::RAPID_BLINK),
+            ),
             None => (
                 format!("Words: [{}]", self.expressions.len()),
                 Style::default(),
@@ -69,13 +76,19 @@ impl AppState {
         ]);
         let [left, mid_left, mid_right, right] = horizontal.areas(area);
 
-        self.rend_keybinds(right, buf);
+        self.rend_main_keybinds(right, buf);
         self.rend_input_box(left, buf);
     }
 
     fn rend_err(&self, area: Rect, buf: &mut Buffer) {
         let (msg, style) = match &self.err_msg {
-            Some(msg) => (msg.clone(), Style::default().light_red().bold().add_modifier(Modifier::RAPID_BLINK)),
+            Some(msg) => (
+                msg.clone(),
+                Style::default()
+                    .light_red()
+                    .bold()
+                    .add_modifier(Modifier::RAPID_BLINK),
+            ),
             None => (
                 "No Errors :)".to_string(),
                 Style::default().light_green().bold(),
