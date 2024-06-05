@@ -232,6 +232,11 @@ impl AppState {
                 Style::default(),
             ),
         };
+    pub fn rend_main_keybinds(&self, area: Rect, buf: &mut Buffer) {
+        let (msg, style) = (
+            vec!["<H> ".light_yellow().bold(), "Help Page".into()],
+            Style::default(),
+        );
 
         let text = Text::from(Line::from(msg).patch_style(style));
         Paragraph::new(text)
