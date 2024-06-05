@@ -71,6 +71,9 @@ pub(crate) struct AppState {
     pub info: Info,
     pub input: InputBox,
     pub client: AnkiClient<'static>
+    pub client: AnkiClient<'static>,
+    pub keybinds: Keybinds,
+    pub selected_page: Pages,
 }
 
 impl AppState {
