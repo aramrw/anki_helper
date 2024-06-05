@@ -3,7 +3,7 @@ use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind, KeyModi
 use crate::app::{AppState, Pages, SelectMode};
 use ratatui::{
     prelude::*,
-    widgets::{Block, ListItem, ListState, Paragraph, List},
+    widgets::{Block, List, ListItem, ListState, Paragraph},
 };
 use std::io;
 
@@ -61,6 +61,18 @@ impl AppState {
                 _ => {}
             },
             SelectMode::Sentences if key.kind == KeyEventKind::Press => match key.code {
+                KeyCode::Char('S') => {
+                    if let Some(sentence) = self.get_current_sentence() {
+                        if sentence.audio_url.is_some() {
+                            self.selected_page = Pages::Splice;
+                        } else {
+                            self.update_error_msg(
+                                "Cannot Splice Audio",
+                                "Sentence does not have an audio file.".to_string(),
+                            );
+                        }
+                    }
+                }
                 KeyCode::Char('P') => {
                     if let Err(err) = self.play_audio().await {
                         self.update_error_msg("Error Playing Audio", err.to_string());
@@ -85,11 +97,8 @@ impl AppState {
                 _ => {}
             },
             _ => match key.code {
-                KeyCode::Char('H') => {
-                    self.selected_page = Pages::Help;
-                }
+                KeyCode::Char('H') => self.selected_page = Pages::Help,
                 KeyCode::Char('M') => self.selected_page = Pages::Main,
-                KeyCode::Char('S') => {}
                 _ => {}
             },
         }
@@ -185,13 +194,18 @@ impl AppState {
 
     pub fn rend_main_keybinds(&self, area: Rect, buf: &mut Buffer) {
         let (msg, style) = (
-            vec!["<H> ".light_yellow().bold(), "Help Page".into()],
+            vec![
+                "<H> ".light_green().bold(),
+                "Help Page ".into(),
+                "<S> ".light_blue().bold(),
+                "Audio Cutter".into(),
+            ],
             Style::default(),
         );
 
         let text = Text::from(Line::from(msg).patch_style(style));
         Paragraph::new(text)
-            .block(Block::bordered().title("Help"))
+            .block(Block::bordered().title("Pages"))
             .centered()
             .render(area, buf);
     }
