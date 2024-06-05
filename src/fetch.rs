@@ -96,6 +96,14 @@ struct MassifSampleSource {
     url: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct MassifResults {
+    highlighted_html: String,
+    sample_source: MassifSampleSource,
+    source_count: u16,
+    text: String,
+}
+
 use crate::app::*;
 
 impl AppState {
