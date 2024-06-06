@@ -19,5 +19,6 @@ rodio = "=0.17.1"
 anki_bridge = { version = "0.8.0", features = ["ureq_blocking"] }
 arboard = "3.4.0"
 regex = "1.10.4"
+webbrowser = "1.0.1"
 # symphonia = { version = "0.5.4", features = ["all"] }
 # headless_chrome = "1.0.10"
