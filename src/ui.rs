@@ -75,13 +75,13 @@ impl AppState {
             Some(msg) => (
                 msg.clone(),
                 Style::default()
-                    .light_red()
+                    .red()
                     .bold()
                     .add_modifier(Modifier::RAPID_BLINK),
             ),
             None => (
                 "No Errors :)".to_string(),
-                Style::default().light_green().bold(),
+                Style::default().green().bold(),
             ),
         };
 
@@ -119,7 +119,7 @@ impl AppState {
             let defs = List::new(def_items).block(
                 Block::bordered()
                     .title(format!("{}'s Definitions", &self.expressions[i].dict_word))
-                    .style(Style::default().light_blue()),
+                    .style(Style::default().blue()),
             );
 
             ratatui::widgets::Widget::render(&defs, area, buf);
@@ -220,8 +220,8 @@ impl AppState {
                         .style(match has_sentences {
                             true => Style::default().red().bold(),
                             false => match self.select_mode {
-                                SelectMode::Expressions => Style::default().light_green().bold(),
-                                SelectMode::Sentences => Style::default().light_yellow().bold(),
+                                SelectMode::Expressions => Style::default().green().bold(),
+                                SelectMode::Sentences => Style::default().yellow().bold(),
                                 _ => Style::default(),
                             },
                         }),
@@ -267,8 +267,8 @@ impl AppState {
             .style(match has_sentences {
                 true => Style::default().red().bold(),
                 false => match self.select_mode {
-                    SelectMode::Expressions => Style::default().light_green().bold(),
-                    SelectMode::Sentences => Style::default().light_yellow().bold(),
+                    SelectMode::Expressions => Style::default().green().bold(),
+                    SelectMode::Sentences => Style::default().yellow().bold(),
                     _ => Style::default(),
                 },
             })
