@@ -62,6 +62,7 @@ impl AppState {
                 _ => {}
             },
             SelectMode::Sentences if key.kind == KeyEventKind::Press => match key.code {
+                KeyCode::Char('L') => self.open_website_link(),
                 // KeyCode::Right => {
                 //     if self.selected_page == Pages::Splice {
                 //         if let Some(i) = self.selected_expression {
