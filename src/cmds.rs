@@ -2,6 +2,7 @@ use crate::app::*;
 use arboard::Clipboard;
 use std::fs::{File, OpenOptions};
 use std::io::{self, prelude::*, BufReader, BufWriter};
+use std::process::{Child, Command};
 use std::time::Instant;
 
 impl AppState {
@@ -114,9 +115,9 @@ impl AppState {
                     }
                 }
                 Err(err) => {
+                    self.select_mode = SelectMode::Expressions;
                     self.info.msg = None;
                     self.err_msg = Some(format!("Error Fetching {}: {}", &current_word, err));
-                    self.select_mode = SelectMode::Expressions;
                 }
             }
         }
@@ -135,5 +136,17 @@ impl AppState {
         let mut clipboard = Clipboard::new().unwrap();
         self.input.text += &clipboard.get_text().unwrap();
         self.input.char_index = self.input.text.len();
+    }
+
+    pub fn restart_program(&mut self) {
+        match Command::new("anki_helper.exe").spawn() {
+            Ok(_) => {
+                std::process::exit(0);
+            }
+            Err(e) => {
+                self.info.msg = None;
+                self.update_error_msg("Error Restarting", e.to_string());
+            }
+        };
     }
 }
