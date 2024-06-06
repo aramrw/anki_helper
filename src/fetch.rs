@@ -126,12 +126,14 @@ impl AppState {
 
         let mut sentences: Vec<Sentence> = Vec::new();
         for item in resp.results {
+            let wbst_link = format!("https://massif.la/ja/search?q={}", &item.text);
             sentences.push(Sentence::from(
                 &item.text,
                 None,
                 None,
                 None,
                 &item.sample_source.title,
+                &wbst_link
             ));
         }
 
@@ -175,12 +177,15 @@ impl AppState {
                     None
                 };
 
+                let wbst_link = format!("https://www.immersionkit.com/dictionary?keyword={}", &ex.sentence);
+
                 sentences.push(Sentence::from(
                     &ex.sentence,
                     Some(ex.sound_url),
                     None,
                     image_url,
                     &ex.deck_name,
+                    &wbst_link
                 ));
             }
         }
