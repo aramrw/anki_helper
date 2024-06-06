@@ -142,6 +142,7 @@ impl AppState {
             _ => match key.code {
                 KeyCode::Char('H') => self.selected_page = Pages::Help,
                 KeyCode::Char('M') => self.selected_page = Pages::Main,
+                KeyCode::Char('R') => self.restart_program(),
                 _ => {}
             },
         }
@@ -238,17 +239,20 @@ impl AppState {
     pub fn rend_main_keybinds(&self, area: Rect, buf: &mut Buffer) {
         let (msg, style) = (
             vec![
-                "<H> ".light_green().bold(),
+                "<H> ".green().bold(),
                 "Help Page ".into(),
-                "<S> ".light_blue().bold(),
-                "Audio Cutter".into(),
+                "<R> ".red().bold(),
+                "Restart Program ".into(),
+                // "<S> ".light_blue().bold(),
+                // "Audio Cutter".into(),
             ],
             Style::default(),
         );
 
         let text = Text::from(Line::from(msg).patch_style(style));
         Paragraph::new(text)
-            .block(Block::bordered().title("Pages"))
+            .block(Block::bordered().title("Keybinds"))
+            .style(Style::default().bold())
             .centered()
             .render(area, buf);
     }
