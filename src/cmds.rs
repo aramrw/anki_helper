@@ -4,6 +4,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, prelude::*, BufReader, BufWriter};
 use std::process::{Child, Command};
 use std::time::Instant;
+use webbrowser;
 
 impl AppState {
     pub fn get_current_sentence(&self) -> Option<Sentence> {
@@ -119,6 +120,14 @@ impl AppState {
                     self.info.msg = None;
                     self.err_msg = Some(format!("Error Fetching {}: {}", &current_word, err));
                 }
+            }
+        }
+    }
+
+    pub fn open_website_link(&mut self) {
+        if let Some(sentence) = self.get_current_sentence() {
+            if let Err(e) = webbrowser::open(&sentence.wbst_link) {
+                self.update_error_msg("Error Opening Link: {}", e.to_string());
             }
         }
     }
