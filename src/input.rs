@@ -116,7 +116,7 @@ impl AppState {
                     //     _ => Style::default(),
                     // })
                     .style(match self.select_mode {
-                        SelectMode::Input => Style::default().light_yellow(),
+                        SelectMode::Input => Style::default().yellow(),
                         _ => Style::default(),
                     }),
             )
