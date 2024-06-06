@@ -258,7 +258,7 @@ fn into_update_only_sentence_req(
     sentence: Sentence,
 ) -> Request<UpdateNoteParams> {
     let sentence_field = format_sentence_field(&anki_fields.sentence, &sentence.sentence);
-    let mut note = Note {
+    let note = Note {
         id,
         fields: { sentence_field },
         audio: None,
