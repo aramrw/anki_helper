@@ -50,6 +50,7 @@ pub(crate) struct Sentence {
     pub audio_data: Option<Vec<u8>>,
     pub img_url: Option<String>,
     pub media_title: String,
+    pub wbst_link: String,
 }
 
 pub(crate) struct Expression {
@@ -132,6 +133,7 @@ impl Sentence {
         audio_data: Option<Vec<u8>>,
         img_url: Option<String>,
         media_title: &str,
+        wbst_link: &str,
     ) -> Self {
         Self {
             sentence: sentence.to_string(),
@@ -139,6 +141,7 @@ impl Sentence {
             audio_data,
             img_url,
             media_title: media_title.to_string(),
+            wbst_link: wbst_link.to_string(),
         }
     }
 
