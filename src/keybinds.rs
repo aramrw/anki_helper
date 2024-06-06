@@ -1,6 +1,7 @@
 use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 //use ratatui::prelude::*;
 use crate::app::{AppState, Pages, SelectMode};
+//use crate::audio::{decode_audio_bytes, trim_samples_from_start};
 use ratatui::{
     prelude::*,
     widgets::{Block, List, ListItem, ListState, Paragraph},
@@ -61,18 +62,50 @@ impl AppState {
                 _ => {}
             },
             SelectMode::Sentences if key.kind == KeyEventKind::Press => match key.code {
-                KeyCode::Char('S') => {
-                    if let Some(sentence) = self.get_current_sentence() {
-                        if sentence.audio_url.is_some() {
-                            self.selected_page = Pages::Splice;
-                        } else {
-                            self.update_error_msg(
-                                "Cannot Splice Audio",
-                                "Sentence does not have an audio file.".to_string(),
-                            );
-                        }
-                    }
-                }
+                // KeyCode::Right => {
+                //     if self.selected_page == Pages::Splice {
+                //         if let Some(i) = self.selected_expression {
+                //             let current_exp = &self.expressions[i];
+                //             if let Some(sentences) = &current_exp.sentences {
+                //                 let sent_index = current_exp.selected_sentence.unwrap();
+                //                 let audio_data = self.expressions[i].sentences.as_mut().unwrap()
+                //                     [sent_index]
+                //                     .audio_data
+                //                     .as_mut()
+                //                     .unwrap();
+                //
+                //                 let (samples, sample_rate, channels) =
+                //                     decode_audio_bytes(audio_data.to_vec()).unwrap();
+                //
+                //                 let result =
+                //                     trim_samples_from_start(samples, sample_rate, channels);
+                //
+                //                 let trimmed: Vec<u8> = result
+                //                     .iter()
+                //                     .flat_map(|&sample| {
+                //                         let bytes = sample.to_le_bytes();
+                //                         vec![bytes[0], bytes[1]]
+                //                     })
+                //                     .collect();
+                //
+                //                 *audio_data = trimmed;
+                //             }
+                //         }
+                //     }
+                // }
+                // KeyCode::Char('S') => {
+                //     if let Some(sentence) = self.get_current_sentence() {
+                //         if sentence.audio_url.is_some() {
+                //             self.push_audio().await.unwrap();
+                //             self.selected_page = Pages::Splice;
+                //         } else {
+                //             self.update_error_msg(
+                //                 "Cannot Splice Audio",
+                //                 "Sentence does not have an audio file.".to_string(),
+                //             );
+                //         }
+                //     }
+                // }
                 KeyCode::Char('P') => {
                     if let Err(err) = self.play_audio().await {
                         self.update_error_msg("Error Playing Audio", err.to_string());
@@ -82,8 +115,18 @@ impl AppState {
                     self.update_last_anki_card().await
                 }
                 KeyCode::Esc => self.reset_sentences_index(),
-                KeyCode::Up => self.select_prev_sentence(),
-                KeyCode::Down => self.select_next_sentence(),
+                KeyCode::Up => {
+                    if self.selected_page == Pages::Splice {
+                        return Ok(());
+                    }
+                    self.select_prev_sentence()
+                }
+                KeyCode::Down => {
+                    if self.selected_page == Pages::Splice {
+                        return Ok(());
+                    }
+                    self.select_next_sentence()
+                }
                 _ => {}
             },
             SelectMode::Input if key.kind == KeyEventKind::Press => match key.code {
