@@ -115,7 +115,7 @@ use crate::app::*;
 impl AppState {
     pub async fn fetch_massif_api(
         &mut self,
-        word: String,
+        _word: String,
         index: usize,
         format_url: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
@@ -135,13 +135,17 @@ impl AppState {
             ));
         }
 
+        if sentences.is_empty() {
+            return Err("0 Sentences Found!".into());
+        }
+
         self.expressions[index].sentences = Some(sentences);
         Ok(())
     }
 
     pub async fn fetch_ik_api(
         &mut self,
-        word: String,
+        _word: String,
         index: usize,
         format_url: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
@@ -182,20 +186,32 @@ impl AppState {
         }
 
         if sentences.is_empty() {
-            // self.select_mode = SelectMode::Expressions;
-            // if self.expressions[index].exact_search {
-            //     self.info.msg = format!("No Exact Sentences found for {}", &word).into();
-            // } else {
-            //     self.info.msg = format!("No Sentences found for {}", &word).into();
-            // }
-
-            self.fetch_massif_sentences().await;
+            self.fetch_massif_sentences().await?;
             return Ok(());
         }
 
         self.expressions[index].sentences = Some(sentences);
         Ok(())
     }
+
+    // pub async fn push_audio(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    //     if let Some(exp_index) = self.selected_expression {
+    //         if let Some(sent_index) = self.expressions[exp_index].selected_sentence {
+    //             let sentence =
+    //                 &mut self.expressions[exp_index].sentences.as_mut().unwrap()[sent_index];
+    //
+    //             if sentence.audio_data.is_some() {
+    //                 return Ok(());
+    //             }
+    //
+    //             let audio_url = sentence.audio_url.clone().ok_or("Audio URL not found")?;
+    //             let resp = reqwest::get(&audio_url).await?;
+    //             let audio_data = resp.bytes().await?.to_vec();
+    //             sentence.audio_data = Some(audio_data.clone());
+    //         }
+    //     }
+    //     Ok(())
+    // }
 
     pub async fn play_audio(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(exp_index) = self.selected_expression {
