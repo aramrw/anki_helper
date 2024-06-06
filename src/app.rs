@@ -5,7 +5,7 @@ use std::io;
 use crate::keybinds::Keybinds;
 //use std::sync::{Arc, Mutex};
 
-#[derive(Default)]
+#[derive(Default, PartialEq)]
 pub enum Pages {
     #[default]
     Main,
