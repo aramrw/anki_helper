@@ -1,7 +1,7 @@
 use crate::app::{AppState, Pages, SelectMode, Sentence};
 use ratatui::{
     prelude::*,
-    widgets::{Block, List, ListItem, ListState, /* Padding */ Paragraph},
+    widgets::{Block, List, ListItem, /* Padding */ Paragraph},
 };
 
 impl Widget for &mut AppState {
@@ -22,7 +22,7 @@ impl Widget for &mut AppState {
                 self.rend_help_page(area, buf);
             }
             Pages::Splice => {
-                self.rend_splice_page(area, buf);
+                //self.rend_splice_page(area, buf);
             }
         }
     }
