@@ -130,6 +130,13 @@ impl AppState {
                         local_audio_url,
                     )
                 },
+                Some(filename) => into_update_note_req(
+                    note_id as u64,
+                    &config.fields,
+                    sentence,
+                    filename,
+                    local_audio_url,
+                ),
                 None => into_update_only_sentence_req(note_id as u64, &config.fields, sentence),
             };
 
@@ -190,7 +197,7 @@ fn find_note_from_word(
         .0;
     match id_vec.last() {
         Some(id) => Ok(*id),
-        None => Err("No new cards found".into()),
+        None => Err(format!("No notes found for: {}", &word).into()),
     }
 }
 
