@@ -90,16 +90,13 @@ impl AppState {
                             self.err_msg = Some(format!("Error Finding Card: {}", err));
                             return;
                         }
+                Err(_) => match check_note_exists(client, current_word) {
+                    Ok(id) => id,
+                    Err(err) => {
+                        self.err_msg = Some(format!("Error: {}", err));
+                        return;
                     }
-                }
-            };
-
-            let config: ConfigJson = match read_config() {
-                Ok(config) => config,
-                Err(err) => {
-                    self.err_msg = Some(format!("Error Reading Config: {}", err));
-                    return;
-                }
+                },
             };
 
             let sentence: Sentence = match &self.get_current_sentence() {
