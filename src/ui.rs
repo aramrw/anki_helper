@@ -63,12 +63,14 @@ impl AppState {
     }
 
     fn rend_help_area(&mut self, area: Rect, buf: &mut Buffer) {
+    fn rend_top_main_area(&mut self, area: Rect, buf: &mut Buffer) {
         let horizontal = Layout::horizontal([
             Constraint::Percentage(15),
             Constraint::Percentage(25),
             Constraint::Percentage(20),
             Constraint::Percentage(40),
-        ]);
+        ])
+        .flex(layout::Flex::Center);
         let [left, mid_left, mid_right, right] = horizontal.areas(area);
 
         self.rend_main_keybinds(right, buf);
@@ -86,13 +88,20 @@ impl AppState {
             ),
             None => (
                 "No Errors :)".to_string(),
+                "No Errors. :-)".to_string(),
                 Style::default().green().bold(),
             ),
         };
 
         let text = Text::from(Line::from(msg).patch_style(style));
+
+        let title = Line::from(vec![
+            Span::styled("Errors ", Color::Yellow),
+            Span::styled("⚠  ", Color::White),
+        ]);
+
         Paragraph::new(text)
-            .block(Block::bordered().title("Errors"))
+            .block(Block::bordered().title(title))
             .render(area, buf);
     }
 
