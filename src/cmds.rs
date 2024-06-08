@@ -131,6 +131,12 @@ impl AppState {
         }
     }
 
+    pub fn open_github(&mut self) {
+        if let Err(e) = webbrowser::open("https://github.com/aramrw/anki_helper") {
+            self.update_error_msg("Error Opening Github Link: {}", e.to_string());
+        }
+    }
+
     pub fn handle_copy_to_input(&mut self) {
         if let Some(i) = self.selected_expression {
             let selected_word = &self.expressions[i].dict_word;
