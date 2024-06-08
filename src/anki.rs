@@ -7,6 +7,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use std::time::Instant;
+use anki_direct::{AnkiClient as AnkiDirectClient};
+use anki_direct::notes::NoteAction;
+
 
 #[derive(Serialize, Deserialize)]
 struct Note {
@@ -68,7 +71,9 @@ struct ReqResult {
 impl AppState {
     pub async fn update_last_anki_card(&mut self) {
         let instant = Instant::now();
-        let client = &self.client;
+        let bad_client = &self.client;
+        let client = AnkiDirectClient::default();
+        
 
         let config: ConfigJson = match read_config() {
             Ok(config) => config,
@@ -83,7 +88,7 @@ impl AppState {
 
             let note_id = match self.input.text.trim().parse::<usize>() {
                 Ok(id) => id, // if the parsing succeeds, use the parsed id
-                Err(_) => match check_note_exists(client, current_word) {
+                Err(_) => match check_note_exists(&client, current_word).await {
                     Ok(id) => id,
                     Err(err) => {
                         self.err_msg = Some(format!("Error: {}", err));
@@ -132,7 +137,7 @@ impl AppState {
                         &note_id, &current_word, elapsed
                     )
                     .into();
-                    match open_note_gui(client, note_id) {
+                    match open_note_gui(bad_client, note_id) {
                         Ok(_) => match self.delete_word_from_file(current_word) {
                             Ok(_) => {}
                             Err(err) => {
@@ -169,7 +174,20 @@ fn open_note_gui(client: &AnkiClient, id: usize) -> Result<(), Box<dyn std::erro
     Ok(())
 }
 
-#[allow(dead_code)]
+
+async fn direct_find_note_from_word(
+    client: &AnkiDirectClient,
+    word: &str,
+) -> Result<u64, Box<dyn std::error::Error>> {
+
+    let id_vec = NoteAction::find_note_ids(client, word).await?;
+
+    match id_vec.last() {
+        Some(id) => Ok(*id),
+        None => Err(format!("No notes found for: {}", &word).into()),
+    }
+}
+
 fn find_note_from_word(
     client: &AnkiClient,
     word: &str,
@@ -185,6 +203,7 @@ fn find_note_from_word(
     }
 }
 
+#[allow(dead_code)]
 pub fn find_newest_note(client: &AnkiClient) -> Result<usize, Box<dyn std::error::Error>> {
     let id_vec = client
         .request(FindNotesRequest {
@@ -330,21 +349,17 @@ fn into_update_note_req(
     }
 }
 
-pub fn check_note_exists(
-    client: &AnkiClient,
+ pub async fn check_note_exists(
+    client: &AnkiDirectClient,
     current_exp: &str,
 ) -> Result<usize, Box<dyn std::error::Error>> {
     let config = read_config()?;
 
-    let note_id = find_note_from_word(client, current_exp)?;
+    let note_id = direct_find_note_from_word(client, current_exp).await?;
 
-    let note_info = client.request(NotesInfoRequest {
-        notes: vec![note_id],
-    });
+    let note_infos = NoteAction::get_notes_infos(client, vec![note_id]).await?;
 
-    let notes = note_info?;
-
-    for n in notes {
+    for n in note_infos {
         let exp_html = match n.fields.get(&config.fields.expression) {
             Some(html) => html,
             None => {
@@ -364,7 +379,7 @@ pub fn check_note_exists(
         }
 
         if *current_exp.trim() == *text || *current_exp.trim() == *result.trim() {
-            return Ok(note_id);
+            return Ok(note_id as usize);
         }
     }
 
