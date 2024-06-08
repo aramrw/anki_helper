@@ -8,6 +8,14 @@ use ratatui::{
 };
 use std::io;
 
+#[derive(Default, Debug, PartialEq)]
+pub enum KeybindSections {
+    #[default]
+    Expressions,
+    Sentences,
+    Input,
+}
+
 #[derive(Default)]
 pub struct Keybinds {
     pub titles: Vec<String>,
