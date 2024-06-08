@@ -82,6 +82,15 @@ impl AppState {
                         self.select_mode = SelectMode::Sentences;
                         if self.expressions[i].sentences.is_none() {
                             self.fetch_sentences().await;
+                    KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => {
+                        if let Some(i) = self.selected_expression {
+                            self.expressions[i].sentences = None;
+                            self.expressions[i].exact_search = false;
+                            self.select_mode = SelectMode::Sentences;
+                            if self.expressions[i].sentences.is_none() {
+                                self.expressions[i].sentences_state.select(Some(0));
+                                self.fetch_sentences().await;
+                            }
                         }
                     }
                 }
@@ -92,6 +101,15 @@ impl AppState {
                         self.select_mode = SelectMode::Sentences;
                         if self.expressions[i].sentences.is_none() {
                             self.fetch_sentences().await;
+                    KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                        if let Some(i) = self.selected_expression {
+                            self.expressions[i].sentences = None;
+                            self.expressions[i].exact_search = true;
+                            self.select_mode = SelectMode::Sentences;
+                            if self.expressions[i].sentences.is_none() {
+                                self.expressions[i].sentences_state.select(Some(0));
+                                self.fetch_sentences().await;
+                            }
                         }
                     }
                 }
