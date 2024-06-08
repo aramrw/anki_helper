@@ -69,6 +69,14 @@ impl AppState {
         let instant = Instant::now();
         let client = &self.client;
 
+        let config: ConfigJson = match read_config() {
+            Ok(config) => config,
+            Err(err) => {
+                self.err_msg = Some(format!("Error Reading Config: {}", err));
+                return;
+            }
+        };
+
         if let Some(i) = self.selected_expression {
             let current_word = &self.expressions[i].dict_word.clone();
 
