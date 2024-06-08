@@ -50,8 +50,13 @@ impl AppState {
         };
 
         let text = Text::from(Line::from(msg).patch_style(style));
+        let title = Line::from(vec![
+            Span::styled("Information ", Color::Yellow),
+            Span::styled("ⓘ ", Color::White),
+        ]);
+
         Paragraph::new(text)
-            .block(Block::bordered().title("Information"))
+            .block(Block::bordered().title(title))
             .render(msg_area, buf);
 
         self.rend_err(err_area, buf);
