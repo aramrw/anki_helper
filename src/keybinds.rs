@@ -166,17 +166,58 @@ impl AppState {
                 KeyCode::Char('P') => {
                     if let Err(err) = self.play_audio().await {
                         self.update_error_msg("Error Playing Audio", err.to_string());
+                    KeyCode::Down => self.select_next_exp(),
+                    KeyCode::Up => self.select_prev_exp(),
+                    _ => {}
+                },
+                SelectMode::Sentences if key.kind == KeyEventKind::Press => match key.code {
+                    KeyCode::Char('L') => self.open_website_link(),
+                    KeyCode::Char('P') => {
+                        if let Err(err) = self.play_audio().await {
+                            self.update_error_msg("Error Playing Audio", err.to_string());
+                        }
                     }
-                }
-                KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                    self.update_last_anki_card().await
-                }
-                KeyCode::Esc => self.reset_sentences_index(),
-                KeyCode::Up => {
-                    if self.selected_page == Pages::Splice {
-                        return Ok(());
+                    KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                        self.update_last_anki_card().await
                     }
-                    self.select_prev_sentence()
+                    KeyCode::Esc => self.reset_sentences_index(),
+                    KeyCode::Up => {
+                        if self.selected_page == Pages::Splice {
+                            return Ok(());
+                        }
+                        self.select_prev_sentence()
+                    }
+                    KeyCode::Down => {
+                        if self.selected_page == Pages::Splice {
+                            return Ok(());
+                        }
+                        self.select_next_sentence()
+                    }
+                    _ => {}
+                },
+                SelectMode::Input if key.kind == KeyEventKind::Press => match key.code {
+                    KeyCode::Char('P') => self.handle_paste(),
+                    KeyCode::Esc => self.select_mode = SelectMode::Expressions,
+                    KeyCode::Enter => self.confirm_search_query().await,
+                    KeyCode::Backspace => self.delete_char(),
+                    KeyCode::Left => self.move_cursor_left(),
+                    KeyCode::Right => self.move_cursor_right(),
+                    KeyCode::Char(input_char) => self.enter_char(input_char),
+                    _ => {}
+                },
+                _ => match key.code {
+                    KeyCode::Char('H') => {
+                        if self.keybinds.exp_state.selected().is_none() {
+                            self.keybinds.exp_state.select(Some(0));
+                        };
+                        self.selected_page = Pages::Help
+                    }
+                    KeyCode::Char('M') => self.selected_page = Pages::Main,
+                    KeyCode::Char('R') => self.restart_program(),
+                    _ => {}
+                },
+            },
+
                 }
                 KeyCode::Down => {
                     if self.selected_page == Pages::Splice {
