@@ -150,6 +150,7 @@ impl AppState {
         let [exp_kbs_area, sentences_kbs_area, input_kbs_area] =
             keybinds_horizontal.areas(keybinds_area);
         self.rend_keybinds(exp_kbs_area, buf);
+        self.rend_about(about_area, buf);
 
     }
 
