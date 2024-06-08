@@ -47,6 +47,26 @@ impl AppState {
                             Ok(_) => {
                                 self.info.msg =
                                     format!("Deleted: {} from words.txt", &current_wrd).into()
+        if self.expressions_state.selected().is_none() {
+            self.expressions_state.select(Some(0));
+        }
+        match self.selected_page {
+            Pages::Main => match self.select_mode {
+                SelectMode::Expressions if key.kind == KeyEventKind::Press => match key.code {
+                    KeyCode::Char('I') => self.select_mode = SelectMode::Input,
+                    KeyCode::Char('Y') => self.handle_copy_to_input(),
+                    KeyCode::Char('D') => {
+                        if let Some(i) = self.selected_expression {
+                            let current_wrd = &self.expressions[i].dict_word.clone();
+                            match self.delete_word_from_file(current_wrd) {
+                                Ok(_) => {
+                                    self.info.msg =
+                                        format!("Deleted: {} from words.txt", &current_wrd).into()
+                                }
+                                Err(err) => self.update_error_msg(
+                                    "Err Deleting {} from words.txt: {}",
+                                    err.to_string(),
+                                ),
                             }
                             Err(err) => self.update_error_msg(
                                 "Err Deleting {} from words.txt: {}",
