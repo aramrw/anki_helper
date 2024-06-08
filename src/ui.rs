@@ -12,9 +12,10 @@ impl Widget for &mut AppState {
                     Constraint::Length(3),
                     Constraint::Min(10),
                     Constraint::Length(3),
-                ]);
+                ])
+                .flex(layout::Flex::Center);
                 let [help_area, main_area, info_area] = layout.areas(area);
-                self.rend_help_area(help_area, buf);
+                self.rend_top_main_area(help_area, buf);
                 self.rend_main(main_area, buf);
                 self.rend_info_area(info_area, buf)
             }
@@ -40,7 +41,7 @@ impl AppState {
                 msg.clone(),
                 Style::default()
                     .bold()
-                    .fg(Color::Blue)
+                    .fg(Color::Green)
                     .add_modifier(Modifier::RAPID_BLINK),
             ),
             None => (
@@ -62,7 +63,6 @@ impl AppState {
         self.rend_err(err_area, buf);
     }
 
-    fn rend_help_area(&mut self, area: Rect, buf: &mut Buffer) {
     fn rend_top_main_area(&mut self, area: Rect, buf: &mut Buffer) {
         let horizontal = Layout::horizontal([
             Constraint::Percentage(15),
@@ -87,7 +87,6 @@ impl AppState {
                     .add_modifier(Modifier::RAPID_BLINK),
             ),
             None => (
-                "No Errors :)".to_string(),
                 "No Errors. :-)".to_string(),
                 Style::default().green().bold(),
             ),
@@ -107,7 +106,6 @@ impl AppState {
 
     fn rend_media_title(&mut self, area: Rect, buf: &mut Buffer) {
         if let Some(sentence) = &self.get_current_sentence() {
-            let (msg, style) = (vec![sentence.media_title.clone().into()], Style::default());
             let (msg, style) = (
                 vec![sentence.media_title.clone().into()],
                 Style::default().yellow(),
@@ -167,19 +165,27 @@ impl AppState {
     }
 
     fn rend_help_page(&mut self, area: Rect, buf: &mut Buffer) {
-        let vertical = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
+        let vertical = Layout::vertical([
+            Constraint::Length(3),
+            Constraint::Percentage(45),
+            Constraint::Percentage(50),
+        ]).flex(layout::Flex::Center);
 
-        let [keybinds_area, about_area] = vertical.areas(area);
+        let [top_area, keybinds_area, about_area] = vertical.areas(area);
+        self.rend_top_keybs_area(top_area, buf);
+        self.rend_about(about_area, buf);
+
         let keybinds_horizontal = Layout::horizontal([
             Constraint::Percentage(35),
             Constraint::Percentage(35),
             Constraint::Percentage(30),
         ]);
+
         let [exp_kbs_area, sentences_kbs_area, input_kbs_area] =
             keybinds_horizontal.areas(keybinds_area);
-        self.rend_keybinds(exp_kbs_area, buf);
-        self.rend_about(about_area, buf);
-
+        self.rend_exp_keybinds(exp_kbs_area, buf);
+        self.rend_sent_keybinds(sentences_kbs_area, buf);
+        self.rend_input_keybinds(input_kbs_area, buf);
     }
 
     fn rend_main(&mut self, area: Rect, buf: &mut Buffer) {
@@ -187,7 +193,7 @@ impl AppState {
             Constraint::Percentage(15),
             Constraint::Percentage(60),
             Constraint::Percentage(25),
-        ]);
+        ]).flex(layout::Flex::Center);
         let [expressions_area, sentences_area, info_area] = horizontal.areas(area);
 
         {
@@ -201,7 +207,12 @@ impl AppState {
             let words = List::new(words)
                 .block(
                     Block::bordered()
-                        .title("Expressions")
+                        .title(match self.select_mode {
+                            SelectMode::Expressions => {
+                                Line::styled("Expressions", Style::default().white().bold())
+                            }
+                            _ => Line::styled("Expressions", Style::default()).white(),
+                        })
                         .style(match self.select_mode {
                             SelectMode::Expressions => Style::default().yellow().bold(),
                             _ => Style::default(),
@@ -211,7 +222,8 @@ impl AppState {
                     Style::default()
                         .add_modifier(Modifier::BOLD)
                         .add_modifier(Modifier::REVERSED)
-                        .fg(Color::White),
+                        .fg(Color::White)
+                        
                 );
             //.highlight_symbol("⇢ ");
             //.highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
@@ -224,12 +236,16 @@ impl AppState {
         let mut sentence_items: Vec<ListItem> = Vec::new();
         if let Some(i) = self.selected_expression {
             let sentences = &self.expressions[i].sentences.clone();
+            let dict_word = &self.expressions[i].dict_word.clone();
+            let readings = &self.expressions[i].readings.join("・").to_string();
 
             let sentences: Option<&Vec<Sentence>> = if let Some(sentences) = sentences {
                 sentence_items = sentences
                     .iter()
                     .enumerate()
-                    .map(|(i, sentence)| sentence.to_list_item(i))
+                    .map(|(i, sentence)| {
+                        AppState::sentence_to_list_item(&sentence.sentence, dict_word, i)
+                    })
                     .collect();
 
                 Some(sentences)
@@ -237,22 +253,26 @@ impl AppState {
                 None
             };
 
+            let sentence_title = Line::from(vec![
+                Span::styled("「", Color::Green),
+                Span::styled(readings, Style::default().yellow().bold()),
+                Span::styled("」", Color::Green),
+                //Span::styled("∣", Color::Yellow),
+                Span::styled(dict_word, Style::default().white()),
+            ]);
+
             let has_sentences = &sentence_items.is_empty();
             let sentences_list = List::new(sentence_items)
                 .block(
                     Block::bordered()
-                        .title(format!(
-                            "({}) {}'s Sentences",
-                            &self.expressions[i].readings.join("・"),
-                            &self.expressions[i].dict_word.clone()
-                        ))
-                        .style(match has_sentences {
-                            true => Style::default().red().bold(),
-                            false => match self.select_mode {
-                                SelectMode::Expressions => Style::default().green().bold(),
-                                SelectMode::Sentences => Style::default().yellow().bold(),
-                                _ => Style::default(),
-                            },
+                        .title(match self.select_mode {
+                            SelectMode::Sentences => sentence_title,
+                            _ => Line::styled("No Sentence Selected", Style::default()).light_red(),
+                        })
+                        .style(match self.select_mode {
+                            SelectMode::Expressions => Style::default().red().bold(),
+                            SelectMode::Sentences => Style::default().yellow().bold(),
+                            _ => Style::default(),
                         }),
                 )
                 .highlight_style(
