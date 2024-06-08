@@ -275,4 +275,24 @@ impl AppState {
             })
             .render(area, buf);
     }
+
+    pub fn sentence_to_list_item<'a>(sentence: &'a str, word: &'a str, i: usize) -> ListItem<'a> {
+        let start = sentence.find(word).unwrap_or(0);
+        let end = start + word.len();
+
+        let before_word = &sentence[..start];
+        let found_word = &sentence[start..end];
+        let after_word = &sentence[end..];
+
+        let mixed_line = Line::from(vec![
+            Span::styled("|", Color::Green),
+            Span::styled(i.to_string(), Style::default().yellow().bold()),
+            Span::styled("| ", Color::Green),
+            Span::styled(before_word, Color::White),
+            Span::styled(found_word, Style::default().yellow().bold()),
+            Span::styled(after_word, Color::White),
+        ]);
+
+        ListItem::new(mixed_line)
+    }
 }
