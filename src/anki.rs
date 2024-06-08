@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 use crate::app::*;
 use anki_bridge::notes_actions::find_notes::FindNotesRequest;
+use anki_bridge::notes_actions::notes_info::NotesInfoRequest;
 use anki_bridge::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -82,14 +83,6 @@ impl AppState {
 
             let note_id = match self.input.text.trim().parse::<usize>() {
                 Ok(id) => id, // if the parsing succeeds, use the parsed id
-                Err(_) => {
-                    // if the parsing fails, find the newest note id
-                    match find_newest_note(client) {
-                        Ok(id) => id,
-                        Err(err) => {
-                            self.err_msg = Some(format!("Error Finding Card: {}", err));
-                            return;
-                        }
                 Err(_) => match check_note_exists(client, current_word) {
                     Ok(id) => id,
                     Err(err) => {
@@ -121,15 +114,6 @@ impl AppState {
             };
 
             let req: Request<UpdateNoteParams> = match filename {
-                Some(filename) => {
-                    into_update_note_req(
-                        note_id as u64,
-                        &config.fields,
-                        sentence,
-                        filename,
-                        local_audio_url,
-                    )
-                },
                 Some(filename) => into_update_note_req(
                     note_id as u64,
                     &config.fields,
@@ -344,6 +328,47 @@ fn into_update_note_req(
         version: 6,
         params,
     }
+}
+
+pub fn check_note_exists(
+    client: &AnkiClient,
+    current_exp: &str,
+) -> Result<usize, Box<dyn std::error::Error>> {
+    let config = read_config()?;
+
+    let note_id = find_note_from_word(client, current_exp)?;
+
+    let note_info = client.request(NotesInfoRequest {
+        notes: vec![note_id],
+    });
+
+    let notes = note_info?;
+
+    for n in notes {
+        let exp_html = match n.fields.get(&config.fields.expression) {
+            Some(html) => html,
+            None => {
+                return Err(format!(
+                    "Incorrect Field: `{}`; `expression` field in config has to match Anki Note!",
+                    &config.fields.expression
+                )
+                .into())
+            }
+        };
+        let re = regex::Regex::new(r">([^<]+)<")?;
+        let text = &exp_html.value;
+
+        let mut result = String::new();
+        for cap in re.captures_iter(text) {
+            result.push_str(&cap[1]);
+        }
+
+        if *current_exp.trim() == *text || *current_exp.trim() == *result.trim() {
+            return Ok(note_id);
+        }
+    }
+
+    Err(format!("Can't find `{}` in any decks!", current_exp).into())
 }
 
 pub fn read_config() -> Result<ConfigJson, std::io::Error> {
