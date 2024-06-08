@@ -282,6 +282,19 @@ impl AppState {
 
         StatefulWidget::render(kbs, area, buf, &mut self.keybinds.state);
     }
+
+    pub fn rend_about(&mut self, area: Rect, buf: &mut Buffer) {
+        let i = self.keybinds.selected_kb;
+        let (about, style) = (&self.keybinds.abouts[i], Style::default().white());
+        let text = Text::from(Line::from(about.clone()).patch_style(style));
+        Paragraph::new(text)
+            .block(
+                Block::bordered()
+                    .title("About")
+                    .style(Style::default().yellow().bold()),
+            )
+            .render(area, buf);
+    }
 }
 
 impl Keybinds {
