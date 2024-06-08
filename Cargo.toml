@@ -13,12 +13,14 @@ tokio = { version = "1.37.0", features = ["full"] }
 reqwest = { version = "0.12", features = ["json", "stream", "blocking"] }
 serde_json = "1.0.117"
 serde = "1.0.203"
-reqwest-streams = { version = "0.5", features=["json", "csv", "protobuf"] }
+reqwest-streams = { version = "0.5", features = ["json", "csv", "protobuf"] }
 futures-util = "0.3"
 rodio = "=0.17.1"
 anki_bridge = { version = "0.8.0", features = ["ureq_blocking"] }
 arboard = "3.4.0"
 regex = "1.10.4"
 webbrowser = "1.0.1"
+anki_direct = { git = "https://github.com/aramrw/anki_direct.git" }
+
 # symphonia = { version = "0.5.4", features = ["all"] }
 # headless_chrome = "1.0.10"
