@@ -1,8 +1,8 @@
+use crate::keybinds::Keybinds;
 use anki_bridge::AnkiClient;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::{prelude::*, widgets::*};
 use std::io;
-use crate::keybinds::Keybinds;
 //use std::sync::{Arc, Mutex};
 
 #[derive(Default, PartialEq)]
@@ -10,7 +10,7 @@ pub enum Pages {
     #[default]
     Main,
     Help,
-    Splice
+    Splice,
 }
 
 #[derive(Default)]
@@ -95,7 +95,7 @@ impl AppState {
 }
 
 impl AppState {
-    pub async fn run( &mut self, mut term: Terminal<impl Backend>) -> io::Result<()> {
+    pub async fn run(&mut self, mut term: Terminal<impl Backend>) -> io::Result<()> {
         match self.read_words_file() {
             Ok(_) => {}
             Err(err) => self.err_msg = Some(format!("Error Reading `words.txt`: {}", err)),
@@ -144,15 +144,14 @@ impl Sentence {
             wbst_link: wbst_link.to_string(),
         }
     }
-
-    pub fn to_list_item(&self, i: usize) -> ListItem {
-        let line = Line::styled(format!("{}. {}", i, self.sentence), Color::White);
-        ListItem::new(line)
-    }
 }
 
 impl Expression {
-    pub fn from(dict_word: String, _reading: Option<Vec<String>>, sentences: Option<Vec<Sentence>>) -> Self {
+    pub fn from(
+        dict_word: String,
+        _reading: Option<Vec<String>>,
+        sentences: Option<Vec<Sentence>>,
+    ) -> Self {
         Self {
             dict_word,
             readings: Vec::new(),
@@ -165,7 +164,13 @@ impl Expression {
     }
 
     pub fn to_list_item(&self, i: usize) -> ListItem {
-        let line = Line::styled(format!("{}. {}", i, self.dict_word), Color::White);
-        ListItem::new(line)
+        let mixed_line = Line::from(vec![
+            Span::styled("|", Color::Green),
+            Span::styled(i.to_string(), Style::default().yellow().bold()),
+            Span::styled("| ", Color::Green),
+            Span::styled(&self.dict_word, Color::White),
+        ]);
+
+        ListItem::new(mixed_line)
     }
 }
