@@ -2,9 +2,8 @@ use crate::app::*;
 use arboard::Clipboard;
 use std::fs::{File, OpenOptions};
 use std::io::{self, prelude::*, BufReader, BufWriter};
-use std::process::{Child, Command};
+use std::process::Command;
 use std::time::Instant;
-use webbrowser;
 
 impl AppState {
     pub fn get_current_sentence(&self) -> Option<Sentence> {
@@ -45,8 +44,8 @@ impl AppState {
         if let Some(i) = self.selected_expression {
             if self.expressions[i].dict_word.trim() == to_del_word.trim() {
                 self.expressions.remove(i);
-                self.selected_expression = Some(i - 1);
-                self.expressions_state.select(Some(i - 1));
+                self.selected_expression = Some(i.saturating_sub(1));
+                self.expressions_state.select(Some(i.saturating_sub(1)));
             }
         }
 
