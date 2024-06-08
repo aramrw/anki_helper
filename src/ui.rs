@@ -108,10 +108,16 @@ impl AppState {
     fn rend_media_title(&mut self, area: Rect, buf: &mut Buffer) {
         if let Some(sentence) = &self.get_current_sentence() {
             let (msg, style) = (vec![sentence.media_title.clone().into()], Style::default());
+            let (msg, style) = (
+                vec![sentence.media_title.clone().into()],
+                Style::default().yellow(),
+            );
             let text = Text::from(Line::from(msg).patch_style(style));
             Paragraph::new(text)
-                .block(Block::bordered().title("Media Title"))
-                .style(Color::Yellow)
+                .block(
+                    Block::bordered().title(Line::styled("Media Title", Style::default().yellow())),
+                )
+                .style(Color::Green)
                 .centered()
                 .render(area, buf);
         }
@@ -122,18 +128,26 @@ impl AppState {
             let definitions = &self.expressions[i].definitions;
 
             let def_items = definitions.iter().enumerate().map(|(i, def)| {
-                let (msg, style) = (
-                    Span::from(format!("{}. {}", i, def)),
-                    Style::default().white(),
-                );
-                let line = Line::from(msg).patch_style(style);
-                ListItem::new(line)
+                let mixed_line = Line::from(vec![
+                    Span::styled(i.to_string(), Style::default().yellow().bold()),
+                    Span::styled(". ", Color::Green),
+                    Span::styled(def, Style::default().white()),
+                ]);
+                ListItem::new(mixed_line)
             });
+
+            let title = Line::from(vec![
+                Span::styled(
+                    &self.expressions[i].dict_word,
+                    Style::default().yellow().bold(),
+                ),
+                Span::styled("'s Definitions", Style::default().white()),
+            ]);
 
             let defs = List::new(def_items).block(
                 Block::bordered()
-                    .title(format!("{}'s Definitions", &self.expressions[i].dict_word))
-                    .style(Style::default().blue()),
+                    .title(title)
+                    .style(Style::default().green()),
             );
 
             ratatui::widgets::Widget::render(&defs, area, buf);
