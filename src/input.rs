@@ -108,15 +108,18 @@ impl AppState {
         Paragraph::new(Text::from(self.input.text.clone()).style(Color::White))
             .block(
                 Block::bordered()
-                    .title("Search")
-                    // .style(match self.input.mode {
-                    //     InputMode::Search => Style::default().light_magenta(),
-                    //     InputMode::Grep => Style::default().light_cyan(),
-                    //     InputMode::FindID => Style::default().light_blue(),
-                    //     _ => Style::default(),
-                    // })
+                    .title(Line::from(vec![
+                        Span::styled("Search ", Color::Yellow), 
+                        Span::styled("⌕ ", Color::White), 
+                    ]))
                     .style(match self.select_mode {
-                        SelectMode::Input => Style::default().yellow(),
+                        SelectMode::Input => {
+                            match self.input.mode {
+                                InputMode::Search => Style::default().green(),
+                                InputMode::FindID => Style::default().blue(),
+                                _ => Style::default().yellow(),
+                            }
+                        }
                         _ => Style::default(),
                     }),
             )
