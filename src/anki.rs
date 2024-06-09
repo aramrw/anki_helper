@@ -75,6 +75,12 @@ struct ReqResult {
     error: Option<String>,
 }
 
+struct AnkiSentence {
+    sentence_obj: Sentence,
+    filename: Option<String>,
+    local_audio_url: Option<String>,
+}
+
 impl AppState {
     pub async fn update_last_anki_card(&mut self) {
         let instant = Instant::now();
