@@ -243,6 +243,29 @@ impl AppState {
                 }
             };
         }
+                self.select_mode = SelectMode::Expressions;
+
+                // match open_note_gui(bad_client, note_id) {
+                //     Ok(_) => match self.delete_word_from_file(current_word) {
+                //         Ok(_) => {}
+                //         Err(err) => {
+                //             self.err_msg =
+                //                 Some(format!("Error Deleting Word from File: {}", err))
+                //         }
+                //     },
+                //     Err(err) => {
+                //         self.err_msg = Some(format!("Error Opening Note GUI: {}", err));
+                //     }
+                // }
+            }
+            Err(err) => {
+                let elapsed = instant.elapsed().as_secs();
+                self.err_msg = Some(format!(
+                    "POST Error -> Failed to Update Anki Card: {} after {}s",
+                    err, elapsed
+                ));
+            }
+        };
     }
 }
 
