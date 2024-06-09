@@ -13,7 +13,6 @@ pub enum Pages {
     Splice,
 }
 
-#[derive(Default)]
 #[derive(Default, PartialEq)]
 pub enum SelectMode {
     #[default]
@@ -82,9 +81,9 @@ pub(crate) struct AppState {
     pub err_msg: Option<String>,
     pub info: Info,
     pub input: InputBox,
-    pub client: AnkiClient<'static>,
     pub keybinds: Keybinds,
     pub selected_page: Pages,
+    pub notes_to_be_created: NotesToBeCreated,
 }
 
 impl AppState {
@@ -97,9 +96,9 @@ impl AppState {
             err_msg: None,
             info: Info::default(),
             input: InputBox::default(),
-            client: AnkiClient::default(),
             keybinds: Keybinds::new(),
             selected_page: Pages::Main,
+            notes_to_be_created: NotesToBeCreated::default(),
         }
     }
 }
@@ -120,6 +119,9 @@ impl AppState {
                     return Ok(());
                 }
                 // src/keybinds.rs
+                if self.expressions_state.selected().is_none() {
+                    self.expressions_state.select(Some(0));
+                }
                 self.handle_keybinds(key).await?
             }
         }
@@ -144,6 +146,7 @@ impl Sentence {
         img_url: Option<String>,
         media_title: &str,
         wbst_link: &str,
+        parent_expression: &Expression,
     ) -> Self {
         Self {
             sentence: sentence.to_string(),
@@ -152,7 +155,18 @@ impl Sentence {
             img_url,
             media_title: media_title.to_string(),
             wbst_link: wbst_link.to_string(),
+            parent_expression: parent_expression.clone(),
         }
+    }
+    pub fn to_be_created_list_item(&self, sentence: &Sentence, i: usize) -> ListItem {
+        let mixed_line = Line::from(vec![
+            //Span::styled("|", Color::Green),
+            Span::styled(i.to_string(), Style::default().yellow()),
+            Span::styled(". ", Color::Green),
+            Span::styled(sentence.sentence.clone(), Color::White),
+        ]);
+
+        ListItem::new(mixed_line)
     }
 }
 
@@ -175,9 +189,9 @@ impl Expression {
 
     pub fn to_list_item(&self, i: usize) -> ListItem {
         let mixed_line = Line::from(vec![
-            Span::styled("|", Color::Green),
-            Span::styled(i.to_string(), Style::default().yellow().bold()),
-            Span::styled("| ", Color::Green),
+            //Span::styled("|", Color::Green),
+            Span::styled(i.to_string(), Style::default().yellow()),
+            Span::styled(". ", Color::Green),
             Span::styled(&self.dict_word, Color::White),
         ]);
 
