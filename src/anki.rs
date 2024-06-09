@@ -81,6 +81,27 @@ struct AnkiSentence {
     local_audio_url: Option<String>,
 }
 
+impl AnkiSentence {
+    fn into_anki_sentence(sentence: Sentence, config: &ConfigJson) -> Self {
+        let (filename, local_audio_url) = if let Some(audio_url) = &sentence.audio_url {
+            let filename = url_into_file_name(audio_url);
+            let local_audio_url = sentence.audio_data.as_ref().map(|audio_data| {
+                write_audio_bytes_file(&config.media_path, &filename, audio_data).unwrap()
+            });
+
+            (Some(filename), local_audio_url)
+        } else {
+            (None, None)
+        };
+
+        Self {
+            sentence_obj: sentence,
+            filename,
+            local_audio_url,
+        }
+    }
+}
+
 impl AppState {
     pub async fn update_last_anki_card(&mut self) {
         let instant = Instant::now();
