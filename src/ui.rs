@@ -203,6 +203,21 @@ impl AppState {
                 .enumerate()
                 .map(|(i, word)| word.to_list_item(i))
                 .collect();
+    fn rend_expressions(&mut self, area: Rect, buf: &mut Buffer) {
+        let words: Vec<ListItem> = self
+            .expressions
+            .iter()
+            .enumerate()
+            .map(|(i, exp)| {
+                let item = exp.to_list_item(i);
+                for sent_obj in &self.notes_to_be_created.sentences {
+                    if sent_obj.parent_expression.dict_word == *exp.dict_word {
+                        return item.bg(Color::Green);
+                    }
+                }
+                item
+            })
+            .collect();
 
             let words = List::new(words)
                 .block(
