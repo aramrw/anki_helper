@@ -267,19 +267,29 @@ impl AppState {
         StatefulWidget::render(words, area, buf, &mut self.expressions_state);
     }
 
+    fn rend_sentences(&mut self, sentences_area: Rect, info_area: Rect, buf: &mut Buffer) {
+        let horizontal = Layout::vertical([Constraint::Percentage(70), Constraint::Percentage(30)]);
+        let [sentences_area, ntbc_area] = horizontal.areas(sentences_area);
 
         let mut sentence_items: Vec<ListItem> = Vec::new();
         if let Some(i) = self.selected_expression {
-            let sentences = &self.expressions[i].sentences.clone();
-            let dict_word = &self.expressions[i].dict_word.clone();
-            let readings = &self.expressions[i].readings.join("・").to_string();
+            let selected_exp = &self.expressions[i].clone();
+            let sentences = selected_exp.sentences.clone();
+            let dict_word = selected_exp.dict_word.clone();
+            let readings = selected_exp.readings.join("・").to_string();
 
-            let sentences: Option<&Vec<Sentence>> = if let Some(sentences) = sentences {
+            let sentences: Option<&Vec<Sentence>> = if let Some(sentences) = &sentences {
                 sentence_items = sentences
                     .iter()
                     .enumerate()
                     .map(|(i, sentence)| {
-                        AppState::sentence_to_list_item(&sentence.sentence, dict_word, i)
+                        let sent_obj = &sentence;
+                        let item =
+                            AppState::sentence_to_list_item(&sent_obj.sentence, &dict_word, i);
+                        if self.notes_to_be_created.sentences.contains(sent_obj) {
+                            return item.bg(Color::Green);
+                        }
+                        item
                     })
                     .collect();
 
@@ -290,10 +300,10 @@ impl AppState {
 
             let sentence_title = Line::from(vec![
                 Span::styled("「", Color::Green),
-                Span::styled(readings, Style::default().yellow().bold()),
+                Span::styled(readings, Style::default().yellow()),
                 Span::styled("」", Color::Green),
                 //Span::styled("∣", Color::Yellow),
-                Span::styled(dict_word, Style::default().white()),
+                Span::styled(&dict_word, Style::default().white()),
             ]);
 
             let has_sentences = &sentence_items.is_empty();
@@ -302,17 +312,40 @@ impl AppState {
                     Block::bordered()
                         .title(match self.select_mode {
                             SelectMode::Sentences => sentence_title,
-                            _ => Line::styled("No Sentence Selected", Style::default()).light_red(),
+                            _ => {
+                                let current_sentence = self.get_current_sentence();
+                                if current_sentence.is_some()
+                                    && self
+                                        .notes_to_be_created
+                                        .sentences
+                                        .contains(&current_sentence.unwrap())
+                                {
+                                    sentence_title
+                                } else {
+                                    Line::styled("Sentences", Style::default().light_red())
+                                }
+                            }
                         })
                         .style(match self.select_mode {
-                            SelectMode::Expressions => Style::default().red().bold(),
-                            SelectMode::Sentences => Style::default().yellow().bold(),
-                            _ => Style::default(),
+                            SelectMode::Expressions => {
+                                let sentence = self.get_current_sentence();
+                                if sentence.is_some()
+                                    && self
+                                        .notes_to_be_created
+                                        .sentences
+                                        .contains(&sentence.unwrap())
+                                {
+                                    Style::default().light_green().dim()
+                                } else {
+                                    Style::default().light_red().dim()
+                                }
+                            }
+                            SelectMode::Sentences => Style::default().yellow(),
+                            _ => Style::default().dim(),
                         }),
                 )
                 .highlight_style(
                     Style::default()
-                        .add_modifier(Modifier::BOLD)
                         .add_modifier(Modifier::REVERSED)
                         .fg(Color::White),
                 );
@@ -322,15 +355,16 @@ impl AppState {
                     SelectMode::Sentences => match self.expressions[i].selected_sentence {
                         Some(_int) => {
                             self.rend_sentence_info(info_area, buf);
-                            //self.render_blank_sentence_info_block(info_area, buf, has_sentences);
                         }
-                        _ => {
-                            self.render_blank_sentence_info_block(info_area, buf, has_sentences);
-                        }
+                        _ => self.render_blank_sentence_info_block(info_area, buf, has_sentences),
                     },
-                    _ => {
-                        self.render_blank_sentence_info_block(info_area, buf, has_sentences);
-                    }
+                    // SelectMode::Ntbm => match self.notes_to_be_created.state.selected() {
+                    //     Some(_int) => {
+                    //         self.rend_sentence_info(info_area, buf);
+                    //     }
+                    //     _ => self.render_blank_sentence_info_block(info_area, buf, has_sentences),
+                    // },
+                    _ => self.render_blank_sentence_info_block(info_area, buf, has_sentences),
                 }
             } else {
                 self.render_blank_sentence_info_block(info_area, buf, has_sentences);
@@ -342,6 +376,8 @@ impl AppState {
                 buf,
                 &mut self.expressions[i].sentences_state,
             );
+
+            self.rend_notes_to_be_created(ntbc_area, buf);
         }
     }
 
