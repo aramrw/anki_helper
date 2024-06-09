@@ -94,6 +94,11 @@ impl AppState {
                     }
                     KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
                         self.update_last_anki_card().await
+                    KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => {
+                        if let Some(sentence) = self.get_current_sentence() {
+                            self.notes_to_be_created.sentences.push(sentence);
+                            self.select_mode = SelectMode::Expressions;
+                        }
                     }
                     KeyCode::Esc => self.reset_sentences_index(),
                     KeyCode::Up => {
@@ -120,12 +125,33 @@ impl AppState {
                     KeyCode::Char(input_char) => self.enter_char(input_char),
                     _ => {}
                 },
+                SelectMode::Ntbm if key.kind == KeyEventKind::Press => match key.code {
+                    KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                        if self.notes_to_be_created.sentences.is_empty() {
+                            self.err_msg = Some("Error: You must have at least 1 sentence selected to update or create a Note".to_string());
+                            return Ok(());
+                        }
+                        self.update_anki_cards().await;
+                    }
+                    KeyCode::Esc => self.select_mode = SelectMode::Expressions,
+                    KeyCode::Up => self.select_prev_note(),
+                    KeyCode::Down => self.select_next_note(),
+                    KeyCode::Char('D') => self.delete_note(),
+                    _ => {}
+                },
+                // main page global keybinds
                 _ => match key.code {
                     KeyCode::Char('H') => {
                         if self.keybinds.exp_state.selected().is_none() {
                             self.keybinds.exp_state.select(Some(0));
                         };
                         self.selected_page = Pages::Help
+                    }
+                    KeyCode::Char('N') => {
+                        if self.notes_to_be_created.state.selected().is_none() {
+                            self.notes_to_be_created.state.select(Some(0));
+                        }
+                        self.select_mode = SelectMode::Ntbm
                     }
                     KeyCode::Char('M') => self.selected_page = Pages::Main,
                     KeyCode::Char('R') => self.restart_program(),
@@ -148,6 +174,11 @@ impl AppState {
                         KeyCode::Up => self.select_prev_keybind(KeybindSections::Sentences),
                         _ => {}
                     },
+                    KeybindSections::Notes if key.kind == KeyEventKind::Press => match key.code {
+                        KeyCode::Down => self.select_next_keybind(KeybindSections::Notes),
+                        KeyCode::Up => self.select_prev_keybind(KeybindSections::Notes),
+                        _ => {}
+                    },
                     KeybindSections::Input if key.kind == KeyEventKind::Press => match key.code {
                         KeyCode::Down => self.select_next_keybind(KeybindSections::Input),
                         KeyCode::Up => self.select_prev_keybind(KeybindSections::Input),
@@ -167,6 +198,12 @@ impl AppState {
                             };
                             self.keybinds.selected_section = KeybindSections::Sentences;
                         }
+                        KeyCode::Char('N') => {
+                            if self.keybinds.note_state.selected().is_none() {
+                                self.keybinds.note_state.select(Some(0));
+                            };
+                            self.keybinds.selected_section = KeybindSections::Notes;
+                        }
                         KeyCode::Char('I') => {
                             if self.keybinds.input_state.selected().is_none() {
                                 self.keybinds.input_state.select(Some(0));
@@ -182,6 +219,23 @@ impl AppState {
             _ => {}
         }
         Ok(())
+    }
+
+    pub fn delete_note(&mut self) {
+        if self.notes_to_be_created.sentences.is_empty() {
+            return;
+        }
+        let i = self.notes_to_be_created.state.selected().unwrap_or(0);
+        self.notes_to_be_created.sentences.remove(i);
+        if self.notes_to_be_created.sentences.is_empty() {
+            self.select_mode = SelectMode::Expressions;
+            return;
+        }
+        if i == 0 {
+            return;
+        }
+
+        self.notes_to_be_created.state.select(Some(i - 1));
     }
 
     pub fn reset_sentences_index(&mut self) {
