@@ -192,6 +192,42 @@ impl AppState {
         self.select_mode = SelectMode::Expressions
     }
 
+    pub fn select_prev_note(&mut self) {
+        let len = self.notes_to_be_created.sentences.len();
+        if len == 0 {
+            return;
+        }
+        let note_index = match self.notes_to_be_created.state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    len - 1
+                } else {
+                    i - 1
+                }
+            }
+            None => 0,
+        };
+        self.notes_to_be_created.state.select(Some(note_index));
+    }
+
+    pub fn select_next_note(&mut self) {
+        let len = self.notes_to_be_created.sentences.len();
+        if len == 0 {
+            return;
+        }
+        let note_index = match self.notes_to_be_created.state.selected() {
+            Some(i) => {
+                if i == len - 1 {
+                    0
+                } else {
+                    i + 1
+                }
+            }
+            None => 0,
+        };
+        self.notes_to_be_created.state.select(Some(note_index));
+    }
+
     pub fn select_prev_sentence(&mut self) {
         if let Some(exp_index) = self.selected_expression {
             let selected_exp = &self.expressions[exp_index];
