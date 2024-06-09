@@ -487,6 +487,7 @@ impl Keybinds {
     pub fn to_list_item(text: &str, _i: usize) -> ListItem {
         let (msg, style) = (
             vec!["<".white(), text.yellow().bold(), ">".white()],
+            vec!["<".white(), text.yellow(), ">".white()],
             Style::default(),
         );
         let line = Line::from(msg).patch_style(style);
@@ -497,16 +498,17 @@ impl Keybinds {
         // exp
 
         let exp_titles = ["I", "Y", "D", "Enter", "C-Enter", "Up", "Down"]
+        let exp_titles = ["Enter", "C-Enter", "I", "Y", "D", "Up", "Down"]
             .iter()
             .map(|kb| kb.to_string())
             .collect();
 
         let exp_abouts = [
+                "Fetches Sentences\n‎\nSentences may include, or exactly match the selected Expression in one of its forms.\nDepending on the word's rarity, either it's kanji form, or it's kana reading may provide more accurate results.\nSee `<C-Enter>` for more information on sentence accuracy.\n‎\nIf no sentences are found from Immersion Kit, it will fetch sentences from Massif.la.\nMassif.la sentences don't contain audio or images.\n(WIP) You can set `\"tts\": true` in your config.json to generate audio for the sentence.",
+                "[Ctrl + Enter] - Enables `Exact Search` for Immersion Kit Search Results\n‎\nThis will find sentences that contain a 1 to 1 match of the selected Expression.\n‎\nThis means that it will not try to match the Expressions kana reading.\nOr if the Expression is a verb, it will not recognize it's conjugated forms.\n‎\nIf no sentences are found from Immersion Kit with `Exact Search` enabled, it will still fetch from Massif.la (with `Exact Search` disabled).",
                 "Focuses the Search Box\n‎\nPress <I> to see Search Box keybinds.",
                 "Copies Selected Expression into Input Box\n‎\nPress <I> to see Search Box keybinds.",
-                "Deletes the Selected Expression\n‎\nThis will also remove the expression from your words.txt file.",
-                "Fetches Sentences\n‎\nSentences may include, or exactly match the selected Expression in one of its forms.\nDepending on the word's rarity, either it's kanji form, or it's kana reading may provide more accurate results.\nSee `<C-Enter>` for more information on sentence accuracy.\n‎\nIf no sentences are found from Immersion Kit, it will fetch sentences from Massif.la.\nMassif.la sentences don't contain audio or images.\n(WIP) You can set `\"tts\": true` in your config.json to generate audio for the sentence.",
-                "[Ctrl + Enter] - Enables `Exact Search` for Immersion Kit Search Results\n‎\nThis will find sentences that contain a 1 to 1 match of the selected Expression.\n‎\nThis means that it will not try to match the Expressions kana reading.\nOr if the Expression is a verb, it will not recognize it's conjugated forms.\n‎\nIf no sentences are found with from Immersion Kit with `Exact Search` enabled, it will still fetch from Massif.la.",
+                "Deletes the Selected Expression\n‎\nThis will also remove the expression from your words.txt file.\nYou can set `\"del_word\": true` in your config.json to automatically delete selected Expressions from your words.txt after updating their Anki Notes.",
                 "Selects the Previous Expression\n‎\nFocuses the Previous Expression in the Expressions List.",
                 "Selects the Next Expression\n‎\nFocuses the Next Expression in the Expressions List.",
             ]
