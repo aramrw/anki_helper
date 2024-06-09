@@ -7,6 +7,9 @@ use std::time::Instant;
 
 impl AppState {
     pub fn get_current_sentence(&self) -> Option<Sentence> {
+        if self.expressions.is_empty() {
+            return None;
+        }
         if let Some(exp_index) = self.selected_expression {
             let expression = &self.expressions[exp_index];
             if let Some(sentence_index) = expression.selected_sentence {
@@ -52,28 +55,58 @@ impl AppState {
     }
 
     pub fn delete_words_from_file(&mut self, del_vec: &Vec<String>) -> io::Result<()> {
+        {
+            let file = File::open("words.txt")?;
+            let reader = BufReader::new(file);
+
+            let temp_file = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open("temp.txt")?;
+            let mut writer = BufWriter::new(temp_file);
+
+            for line in reader.lines() {
+                let mut line = line?;
+                for to_del_word in del_vec {
+                    if line.contains(to_del_word) {
+                        line = line.replace(to_del_word, "");
+                    }
+                }
+                writeln!(writer, "{}", line)?;
+            }
+
+            std::fs::remove_file("words.txt")?;
+            std::fs::rename("temp.txt", "words.txt")?;
+            self.delete_exps_from_app_data(del_vec);
+        }
+
+        self.clean_up_words_file()?;
+
+        Ok(())
+    }
+
+    pub fn clean_up_words_file(&mut self) -> io::Result<()> {
         let file = File::open("words.txt")?;
         let reader = BufReader::new(file);
 
-        let temp_file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open("temp.txt")?;
-        let mut writer = BufWriter::new(temp_file);
+        let mut words = Vec::new();
 
         for line in reader.lines() {
-            let mut line = line?;
-            for to_del_word in del_vec {
-                if line.contains(to_del_word) {
-                    line = line.replace(to_del_word, "");
-                }
+            let line = line?;
+            for word in line.split_whitespace() {
+                words.push(word.to_string());
             }
-            writeln!(writer, "{}", line)?;
         }
 
-        std::fs::remove_file("words.txt")?;
-        std::fs::rename("temp.txt", "words.txt")?;
+        let cleaned_words = words.join(" ");
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open("words.txt")?;
+
+        writeln!(file, "{}", cleaned_words)?;
 
         Ok(())
     }
