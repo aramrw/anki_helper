@@ -517,6 +517,7 @@ impl Keybinds {
         // sent
 
         let sent_titles = ["P", "L", "C-Enter", "Esc", "Up", "Down"]
+        let sent_titles = ["P", "L", "Esc", "Up", "Down"]
             .iter()
             .map(|kb| kb.to_string())
             .collect();
@@ -533,6 +534,22 @@ impl Keybinds {
             .map(|ab| ab.to_string())
             .collect();
 
+        // notes
+
+        let note_titles = ["C-Enter", "D", "N", "Esc"]
+            .iter()
+            .map(|kb| kb.to_string())
+            .collect();
+
+        let note_abouts = ["[Ctrl + Enter] - Update Notes\n‎\nFinds, checks, then updates any Anki Notes that contain the selected Expressions.\nIf the selected Sentence was fetched from Massif.la, it will only update the Sentence field specified in your config.json.\nOtherwise it will update the Sentence, and Audio fields.\nSome entries on Immersion Kit do not contain an image file (ie. Skyrim).\nIf an image file exists, it will be added as well.\n‎\nWarning: Overwrites existing data in the Anki fields specified in your config.json except the Audio & Image fields, those will get appended to.",
+            "Deletes the Selected Sentence\n‎\nRemoves the sentence from the Notes list.",
+            "Focuses the Notes Section\n‎\nFocuses the Notes section if it is not already focused.",
+            "Focuses to the Expressions Section\n‎\nFocuses the Expressions section if focused on the Notes section."
+            ]
+            .iter()
+            .map(|ab| ab.to_string())
+            .collect();
+
         // input
 
         let input_titles = ["Enter", "P", "Left", "Right", "Backspace"]
@@ -540,8 +557,10 @@ impl Keybinds {
             .map(|kb| kb.to_string())
             .collect();
 
-        let input_abouts = ["Submits the Current Input\n‎\nYou can update a specific Anki Note by entering the Anki Note ID into the Search Box.\nThis can be useful in rare cases where Anki may not be able to find the Note containing the selected Expression.\n‎\nYou can jump to a specific Expression by entering it's List number.\nYou can also jump to a specific Expression by entering the Expression. Note that it must be an exact match.", 
-            "Pastes from Clipboard\n‎\nPastes the current copied test from the Clipboard into the Search Box.",
+        // \nYou can update a specific Anki Note by entering the Anki Note ID into the Search Box.\nThis can be useful in rare cases where Anki may not be able to find the Note containing the selected Expression.
+
+        let input_abouts = ["Submits the Current Input\n‎\nYou can jump to a specific Expression by entering it's List number.\nYou can also jump to a specific Expression by entering the Expression. Note that it must be an exact match.", 
+            "Pastes from Clipboard\n‎\nPastes the current copied text from the Clipboard into the Search Box.",
             "Selects the Previous Character\n‎\nSelects the Previous Character of the Text in the Search Box.",
             "Selects the Next Character\n‎\nFocuses the Next Char of the Text in the Search Box.",
             "Deletes the Previous Character\n‎\nDeletes the Previous Character of the Text in the Search Box."
@@ -553,12 +572,15 @@ impl Keybinds {
         Self {
             exp_titles,
             sent_titles,
+            note_titles,
             input_titles,
             exp_state: ListState::default(),
             sent_state: ListState::default(),
+            note_state: ListState::default(),
             input_state: ListState::default(),
             exp_abouts,
             sent_abouts,
+            note_abouts,
             input_abouts,
             selected_section: KeybindSections::Expressions,
         }
