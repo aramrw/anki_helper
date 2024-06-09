@@ -3,13 +3,13 @@ use crate::app::*;
 use anki_bridge::notes_actions::find_notes::FindNotesRequest;
 use anki_bridge::notes_actions::notes_info::NotesInfoRequest;
 use anki_bridge::prelude::*;
+use anki_direct::notes::NoteAction;
+use anki_direct::AnkiClient as AnkiDirectClient;
+use futures_util::future::join_all;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use std::time::Instant;
-use anki_direct::{AnkiClient as AnkiDirectClient};
-use anki_direct::notes::NoteAction;
-
 
 #[derive(Serialize, Deserialize)]
 struct Note {
@@ -49,6 +49,7 @@ struct Request<P: AnkiParams> {
 
 #[derive(Serialize, Deserialize)]
 struct ConfigOptions {
+    del_words: bool,
     tts: bool,
 }
 
@@ -57,7 +58,7 @@ struct ConfigOptions {
 pub struct ConfigJson {
     pub fields: UserNoteFields,
     pub media_path: String,
-    options: ConfigOptions
+    options: ConfigOptions,
 }
 
 #[derive(Serialize, Deserialize)]
