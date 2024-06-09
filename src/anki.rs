@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 use crate::app::*;
 use anki_bridge::notes_actions::find_notes::FindNotesRequest;
-use anki_bridge::notes_actions::notes_info::NotesInfoRequest;
 use anki_bridge::prelude::*;
 use anki_direct::notes::NoteAction;
 use anki_direct::AnkiClient as AnkiDirectClient;
@@ -103,11 +102,9 @@ impl AnkiSentence {
 }
 
 impl AppState {
-    pub async fn update_last_anki_card(&mut self) {
+    pub async fn update_anki_cards(&mut self) {
         let instant = Instant::now();
-        let bad_client = &self.client;
         let client = AnkiDirectClient::default();
-        
 
         let config: ConfigJson = match read_config() {
             Ok(config) => config,
@@ -117,8 +114,6 @@ impl AppState {
             }
         };
 
-        if let Some(i) = self.selected_expression {
-            let current_word = &self.expressions[i].dict_word.clone();
         let sentence_objs_vec = &self.notes_to_be_created.sentences;
         let mut note_ids: Vec<usize> = Vec::new();
 
@@ -140,30 +135,16 @@ impl AppState {
             note_ids.push(id);
         }
 
-            let (filename, local_audio_url) = if let Some(audio_url) = &sentence.audio_url {
-                let filename = url_into_file_name(audio_url);
-                let local_audio_url = if let Some(audio_data) = &sentence.audio_data {
-                    Some(write_audio_bytes_file(&config.media_path, &filename, audio_data).unwrap())
-                } else {
-                    None
-                };
         let mut anki_sentences: Vec<AnkiSentence> = Vec::new();
         let prnt_exps_vec: Vec<String> = anki_sentences
             .iter()
             .map(|sntce| sntce.sentence_obj.parent_expression.dict_word.clone())
             .collect();
 
+        for sentence in sentence_objs_vec {
+            anki_sentences.push(AnkiSentence::into_anki_sentence(sentence.clone(), &config));
+        }
 
-            let req: Request<UpdateNoteParams> = match filename {
-                Some(filename) => into_update_note_req(
-                    note_id as u64,
-                    &config.fields,
-                    sentence,
-                    filename,
-                    local_audio_url,
-                ),
-                None => into_update_only_sentence_req(note_id as u64, &config.fields, sentence),
-            };
         let mut requests_vec: Vec<Request<UpdateNoteParams>> = Vec::new();
 
         anki_sentences
@@ -184,16 +165,6 @@ impl AppState {
                 requests_vec.push(req);
             });
 
-            match post_note_update(req).await {
-                Ok(_) => {
-                    let elapsed = instant.elapsed().as_secs();
-                    self.info.msg = format!(
-                        "Updated Fields for CardID: {} - ({}) in {}s",
-                        &note_id, &current_word, elapsed
-                    )
-                    .into();
-                    match open_note_gui(bad_client, note_id) {
-                        Ok(_) => match self.delete_word_from_file(current_word) {
         match post_note_updates(requests_vec, client.client).await {
             Ok(_) => {
                 let elapsed = instant.elapsed().as_secs();
@@ -228,21 +199,9 @@ impl AppState {
                                 self.err_msg =
                                     Some(format!("Error Deleting Word from File: {}", err))
                             }
-                        },
-                        Err(err) => {
-                            self.err_msg = Some(format!("Error Opening Note GUI: {}", err));
                         }
                     }
                 }
-                Err(err) => {
-                    let elapsed = instant.elapsed().as_secs();
-                    self.err_msg = Some(format!(
-                        "POST Error -> Failed to Update Anki Card: {} after {}s",
-                        err, elapsed
-                    ));
-                }
-            };
-        }
                 self.select_mode = SelectMode::Expressions;
 
                 // match open_note_gui(bad_client, note_id) {
@@ -281,12 +240,10 @@ fn open_note_gui(client: &AnkiClient, id: usize) -> Result<(), Box<dyn std::erro
     Ok(())
 }
 
-
 async fn direct_find_note_from_word(
     client: &AnkiDirectClient,
     word: &str,
 ) -> Result<u64, Box<dyn std::error::Error>> {
-
     let id_vec = NoteAction::find_note_ids(client, word).await?;
 
     match id_vec.last() {
@@ -323,28 +280,32 @@ pub fn find_newest_note(client: &AnkiClient) -> Result<usize, Box<dyn std::error
     }
 }
 
-async fn post_note_update(
-    req: Request<UpdateNoteParams>,
+async fn post_note_updates(
+    reqs: Vec<Request<UpdateNoteParams>>,
+    client: reqwest::Client,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let client = reqwest::Client::builder().build()?;
-    let res = client
-        .post("http://localhost:8765")
-        .json(&req)
-        .send()
-        .await?;
+    let futures: Vec<_> = reqs
+        .into_iter()
+        .map(|req| client.post("http://localhost:8765").json(&req).send())
+        .collect();
 
-    let res: ReqResult = res.json().await?;
+    let results = join_all(futures).await;
 
-    match res {
-        ReqResult {
-            result: Some(_),
-            error: None,
-        } => {}
-        ReqResult {
-            result: None,
-            error: Some(err),
-        } => return Err(err.into()),
-        _ => return Ok(()),
+    for result in results {
+        let res = result?;
+        let res: ReqResult = res.json().await?;
+
+        match res {
+            ReqResult {
+                result: Some(_),
+                error: None,
+            } => {}
+            ReqResult {
+                result: None,
+                error: Some(err),
+            } => return Err(err.into()),
+            _ => return Ok(()),
+        }
     }
 
     Ok(())
@@ -377,9 +338,10 @@ fn write_audio_bytes_file(
 fn into_update_only_sentence_req(
     id: u64,
     anki_fields: &UserNoteFields,
-    sentence: Sentence,
+    sentence: &AnkiSentence,
 ) -> Request<UpdateNoteParams> {
-    let sentence_field = format_sentence_field(&anki_fields.sentence, &sentence.sentence);
+    let sentence_field =
+        format_sentence_field(&anki_fields.sentence, &sentence.sentence_obj.sentence);
     let note = Note {
         id,
         fields: { sentence_field },
@@ -399,13 +361,13 @@ fn into_update_only_sentence_req(
 fn into_update_note_req(
     id: u64,
     anki_fields: &UserNoteFields,
-    sentence: Sentence,
+    sentence: AnkiSentence,
     filename: String,
-    local_audio_url: Option<String>,
 ) -> Request<UpdateNoteParams> {
-    let sentence_field = format_sentence_field(&anki_fields.sentence, &sentence.sentence);
+    let sentence_field =
+        format_sentence_field(&anki_fields.sentence, &sentence.sentence_obj.sentence);
 
-    let picture: Option<Vec<Media>> = match &sentence.img_url {
+    let picture: Option<Vec<Media>> = match &sentence.sentence_obj.img_url {
         Some(img_url) => vec![Media {
             url: img_url.clone(),
             filename: url_into_file_name(img_url),
@@ -417,7 +379,7 @@ fn into_update_note_req(
     };
 
     let local_audio_field: Option<HashMap<String, String>> =
-        local_audio_url.map(|local_audio_url| {
+        sentence.local_audio_url.map(|local_audio_url| {
             format_local_audio_field(&anki_fields.sentence_audio, &local_audio_url)
         });
 
@@ -440,7 +402,7 @@ fn into_update_note_req(
         note.fields.extend(audio_field);
     } else {
         note.audio = Some(vec![Media {
-            url: sentence.audio_url.unwrap(),
+            url: sentence.sentence_obj.audio_url.unwrap(),
             filename,
             skipHash: None,
             fields: vec![anki_fields.sentence_audio.clone()],
@@ -456,7 +418,7 @@ fn into_update_note_req(
     }
 }
 
- pub async fn check_note_exists(
+pub async fn check_note_exists(
     client: &AnkiDirectClient,
     current_exp: &str,
 ) -> Result<usize, Box<dyn std::error::Error>> {
