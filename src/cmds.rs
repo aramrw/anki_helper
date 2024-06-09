@@ -44,6 +44,9 @@ impl AppState {
         if let Some(i) = self.selected_expression {
             if self.expressions[i].dict_word.trim() == to_del_word.trim() {
                 self.expressions.remove(i);
+                if self.expressions_state.selected().unwrap_or(0) == 0 {
+                    return Ok(());
+                }
                 self.selected_expression = Some(i.saturating_sub(1));
                 self.expressions_state.select(Some(i.saturating_sub(1)));
             }
@@ -72,7 +75,7 @@ impl AppState {
         if let Some(i) = self.selected_expression {
             let current_word = self.expressions[i].dict_word.clone();
             let format_url = format!("https://massif.la/ja/search?q={}&fmt=json", &current_word);
-            self.fetch_massif_api(current_word.clone(), i, format_url)
+            self.fetch_massif_api(self.expressions[i].clone(), i, format_url)
                 .await?;
         }
         Ok(())
@@ -95,7 +98,7 @@ impl AppState {
                 )
             };
 
-            match self.fetch_ik_api(current_word.clone(), i, format_url).await {
+            match self.fetch_ik_api(self.expressions[i].clone(), i, format_url).await {
                 Ok(_) => {
                     self.err_msg = None;
                     if self.expressions[i].exact_search {
