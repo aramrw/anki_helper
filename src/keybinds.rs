@@ -36,6 +36,11 @@ pub struct Keybinds {
 
 impl AppState {
     pub async fn handle_keybinds(&mut self, key: KeyEvent) -> io::Result<()> {
+        if self.expressions.is_empty() {
+            self.update_error_msg("words.txt Error", "The file is empty!".to_string());
+            self.read_words_file().unwrap();
+            return Ok(());
+        }
         match self.selected_page {
             Pages::Main => match self.select_mode {
                 SelectMode::Expressions if key.kind == KeyEventKind::Press => match key.code {
