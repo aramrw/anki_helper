@@ -147,11 +147,12 @@ impl AppState {
                 } else {
                     None
                 };
+        let mut anki_sentences: Vec<AnkiSentence> = Vec::new();
+        let prnt_exps_vec: Vec<String> = anki_sentences
+            .iter()
+            .map(|sntce| sntce.sentence_obj.parent_expression.dict_word.clone())
+            .collect();
 
-                (Some(filename), local_audio_url)
-            } else {
-                (None, None)
-            };
 
             let req: Request<UpdateNoteParams> = match filename {
                 Some(filename) => into_update_note_req(
