@@ -115,7 +115,7 @@ use crate::app::*;
 impl AppState {
     pub async fn fetch_massif_api(
         &mut self,
-        _word: String,
+        parent_expression: Expression,
         index: usize,
         format_url: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
@@ -133,7 +133,8 @@ impl AppState {
                 None,
                 None,
                 &item.sample_source.title,
-                &wbst_link
+                &wbst_link,
+                &parent_expression,
             ));
         }
 
@@ -147,7 +148,7 @@ impl AppState {
 
     pub async fn fetch_ik_api(
         &mut self,
-        _word: String,
+        parent_expression: Expression,
         index: usize,
         format_url: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
@@ -163,7 +164,7 @@ impl AppState {
                     self.expressions[index]
                         .definitions
                         .extend(section.glossary_list);
-                    if !self.expressions[index].readings.contains(&section.reading)
+                    if !parent_expression.readings.contains(&section.reading)
                         && self.expressions[index].dict_word != section.reading
                     {
                         self.expressions[index].readings.push(section.reading);
@@ -185,7 +186,8 @@ impl AppState {
                     None,
                     image_url,
                     &ex.deck_name,
-                    &wbst_link
+                    &wbst_link,
+                    &parent_expression,
                 ));
             }
         }
