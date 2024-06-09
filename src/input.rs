@@ -120,7 +120,7 @@ impl AppState {
                                 _ => Style::default().yellow(),
                             }
                         }
-                        _ => Style::default(),
+                        _ => Style::default().dim(),
                     }),
             )
             .render(area, buf);
