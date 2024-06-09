@@ -18,7 +18,7 @@ impl AppState {
         None
     }
 
-    pub fn delete_word_from_file(&mut self, to_del_word: &str) -> io::Result<()> {
+    pub fn delete_words_from_file(&mut self, del_vec: &Vec<String>) -> io::Result<()> {
         let file = File::open("words.txt")?;
         let reader = BufReader::new(file);
 
@@ -30,27 +30,17 @@ impl AppState {
         let mut writer = BufWriter::new(temp_file);
 
         for line in reader.lines() {
-            let line = line?;
-            let new_line = if line.contains(to_del_word) {
-                line.replace(to_del_word, "")
-            } else {
-                line
-            };
-            writeln!(writer, "{}", new_line)?;
+            let mut line = line?;
+            for to_del_word in del_vec {
+                if line.contains(to_del_word) {
+                    line = line.replace(to_del_word, "");
+                }
+            }
+            writeln!(writer, "{}", line)?;
         }
 
         std::fs::remove_file("words.txt")?;
         std::fs::rename("temp.txt", "words.txt")?;
-        if let Some(i) = self.selected_expression {
-            if self.expressions[i].dict_word.trim() == to_del_word.trim() {
-                self.expressions.remove(i);
-                if self.expressions_state.selected().unwrap_or(0) == 0 {
-                    return Ok(());
-                }
-                self.selected_expression = Some(i.saturating_sub(1));
-                self.expressions_state.select(Some(i.saturating_sub(1)));
-            }
-        }
 
         Ok(())
     }
@@ -98,7 +88,10 @@ impl AppState {
                 )
             };
 
-            match self.fetch_ik_api(self.expressions[i].clone(), i, format_url).await {
+            match self
+                .fetch_ik_api(self.expressions[i].clone(), i, format_url)
+                .await
+            {
                 Ok(_) => {
                     self.err_msg = None;
                     if self.expressions[i].exact_search {

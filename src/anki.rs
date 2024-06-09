@@ -74,6 +74,7 @@ struct ReqResult {
     error: Option<String>,
 }
 
+#[derive(Debug)]
 struct AnkiSentence {
     sentence_obj: Sentence,
     filename: Option<String>,
@@ -136,14 +137,15 @@ impl AppState {
         }
 
         let mut anki_sentences: Vec<AnkiSentence> = Vec::new();
-        let prnt_exps_vec: Vec<String> = anki_sentences
-            .iter()
-            .map(|sntce| sntce.sentence_obj.parent_expression.dict_word.clone())
-            .collect();
 
         for sentence in sentence_objs_vec {
             anki_sentences.push(AnkiSentence::into_anki_sentence(sentence.clone(), &config));
         }
+
+        let prnt_exps_vec: Vec<String> = anki_sentences
+            .iter()
+            .map(|sntce| sntce.sentence_obj.parent_expression.dict_word.clone())
+            .collect();
 
         let mut requests_vec: Vec<Request<UpdateNoteParams>> = Vec::new();
 
@@ -177,13 +179,12 @@ impl AppState {
 
                 self.notes_to_be_created.sentences.clear();
                 self.notes_to_be_created.state.select(None);
-                let words_to_delete: Vec<_> = self
+                let words_to_delete: Vec<String> = self
                     .expressions
                     .iter_mut()
                     .filter_map(|exp| {
                         let wrd = &exp.dict_word.clone();
                         if prnt_exps_vec.contains(wrd) {
-                            exp.sentences_state.select(None);
                             Some(wrd.clone())
                         } else {
                             None
@@ -191,17 +192,15 @@ impl AppState {
                     })
                     .collect();
 
-                for wrd in words_to_delete {
-                    if config.options.del_words {
-                        match self.delete_word_from_file(&wrd) {
-                            Ok(_) => {}
-                            Err(err) => {
-                                self.err_msg =
-                                    Some(format!("Error Deleting Word from File: {}", err))
-                            }
+                if config.options.del_words {
+                    match self.delete_words_from_file(&words_to_delete) {
+                        Ok(_) => self.delete_exps_from_app_data(&words_to_delete),
+                        Err(err) => {
+                            self.err_msg = Some(format!("Error Deleting Word from File: {}", err))
                         }
                     }
                 }
+
                 self.select_mode = SelectMode::Expressions;
 
                 // match open_note_gui(bad_client, note_id) {
@@ -225,6 +224,39 @@ impl AppState {
                 ));
             }
         };
+    }
+
+    fn delete_exps_from_app_data(&mut self, del_vec: &[String]) {
+        let mut indexes: Vec<usize> = self
+            .expressions
+            .iter()
+            .enumerate()
+            .filter_map(|(i, exp)| {
+                if del_vec.contains(&exp.dict_word) {
+                    Some(i)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        // Sort the indexes in reverse order
+        indexes.sort_unstable_by(|a, b| b.cmp(a));
+
+        for &i in &indexes {
+            self.expressions.remove(i);
+        }
+
+        // Set the selected expression to the one before the last one that was deleted
+        let final_index = indexes.last().and_then(|&last_index| {
+            if last_index > 0 {
+                Some(last_index - 1)
+            } else {
+                None
+            }
+        });
+        self.selected_expression = final_index;
+        self.expressions_state.select(final_index);
     }
 }
 

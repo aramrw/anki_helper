@@ -44,7 +44,7 @@ impl AppState {
                     KeyCode::Char('D') => {
                         if let Some(i) = self.selected_expression {
                             let current_wrd = &self.expressions[i].dict_word.clone();
-                            match self.delete_word_from_file(current_wrd) {
+                            match self.delete_words_from_file(&vec![current_wrd.to_string()]) {
                                 Ok(_) => {
                                     self.info.msg =
                                         format!("Deleted: {} from words.txt", &current_wrd).into()
