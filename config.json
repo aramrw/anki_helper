@@ -7,7 +7,7 @@
   },
   "media_path": "C:\\Users\\arami\\AppData\\Roaming\\Anki2\\User 1\\collection.media",
   "options": {
-    "del_word": true,
+    "del_words": true,
     "tts": false
   }
 }
