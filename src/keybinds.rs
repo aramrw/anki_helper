@@ -364,6 +364,31 @@ impl AppState {
         StatefulWidget::render(kbs, area, buf, &mut self.keybinds.sent_state);
     }
 
+    pub fn rend_notes_keybinds(&mut self, area: Rect, buf: &mut Buffer) {
+        let kb_titles: Vec<ListItem> = self
+            .keybinds
+            .note_titles
+            .iter()
+            .enumerate()
+            .map(|(i, kb)| Keybinds::to_list_item(kb, i))
+            .collect();
+
+        let kbs = List::new(kb_titles)
+            .block(Block::bordered().title("Notes Keybinds <N>").style(
+                match self.keybinds.selected_section {
+                    KeybindSections::Notes => Style::default().yellow(),
+                    _ => Style::default().dim(),
+                },
+            ))
+            .highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::REVERSED)
+                    .fg(Color::White),
+            );
+
+        StatefulWidget::render(kbs, area, buf, &mut self.keybinds.note_state);
+    }
+
     pub fn rend_input_keybinds(&mut self, area: Rect, buf: &mut Buffer) {
         let kb_titles: Vec<ListItem> = self
             .keybinds
