@@ -1,6 +1,6 @@
 use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 //use ratatui::prelude::*;
-use crate::app::{AppState, Pages, SelectMode};
+use crate::app::{AppState, Pages, SelectMode, Sentence};
 //use crate::audio::{decode_audio_bytes, trim_samples_from_start};
 use ratatui::{
     prelude::*,
@@ -89,12 +89,7 @@ impl AppState {
                             self.update_error_msg("Error Playing Audio", err.to_string());
                         }
                     }
-                    KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => {
-                        if let Some(sentence) = self.get_current_sentence() {
-                            self.notes_to_be_created.sentences.push(sentence);
-                            self.select_mode = SelectMode::Expressions;
-                        }
-                    }
+                    KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => self.check_notes_or_push(),
                     KeyCode::Esc => self.reset_sentences_index(),
                     KeyCode::Up => {
                         if self.selected_page == Pages::Splice {
@@ -215,6 +210,35 @@ impl AppState {
         }
         Ok(())
     }
+
+pub fn check_notes_or_push(&mut self) {
+    if let Some(sentence) = self.get_current_sentence() {
+        let mut found = false;
+
+        let mut new_sentences: Vec<Sentence> = self
+            .notes_to_be_created
+            .sentences
+            .iter()
+            .map(|ntb_sent| {
+                if ntb_sent.parent_expression.dict_word == sentence.parent_expression.dict_word {
+                    found = true;
+                    sentence.clone()
+                } else {
+                    ntb_sent.clone()
+                }
+            })
+            .collect();
+
+        if !found {
+            new_sentences.push(sentence.clone());
+        }
+
+        self.notes_to_be_created.sentences = new_sentences;
+    }
+
+    self.select_mode = SelectMode::Expressions;
+}
+
 
     pub fn delete_note(&mut self) {
         if self.notes_to_be_created.sentences.is_empty() {
@@ -371,9 +395,7 @@ impl AppState {
 
         let text = Text::from(Line::from(msg).patch_style(style));
         Paragraph::new(text)
-            .block(
-                Block::bordered().title(Line::styled("Keybinds", Style::default().yellow())),
-            )
+            .block(Block::bordered().title(Line::styled("Keybinds", Style::default().yellow())))
             .centered()
             .render(area, buf);
     }
@@ -391,9 +413,7 @@ impl AppState {
 
         let text = Text::from(Line::from(msg).patch_style(style));
         Paragraph::new(text)
-            .block(
-                Block::bordered().title(Line::styled("Keybinds", Style::default().yellow())),
-            )
+            .block(Block::bordered().title(Line::styled("Keybinds", Style::default().yellow())))
             .centered()
             .render(area, buf);
     }
