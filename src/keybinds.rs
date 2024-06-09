@@ -36,9 +36,6 @@ pub struct Keybinds {
 
 impl AppState {
     pub async fn handle_keybinds(&mut self, key: KeyEvent) -> io::Result<()> {
-        if self.expressions_state.selected().is_none() {
-            self.expressions_state.select(Some(0));
-        }
         match self.selected_page {
             Pages::Main => match self.select_mode {
                 SelectMode::Expressions if key.kind == KeyEventKind::Press => match key.code {
@@ -92,8 +89,6 @@ impl AppState {
                             self.update_error_msg("Error Playing Audio", err.to_string());
                         }
                     }
-                    KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                        self.update_last_anki_card().await
                     KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => {
                         if let Some(sentence) = self.get_current_sentence() {
                             self.notes_to_be_created.sentences.push(sentence);
@@ -328,6 +323,7 @@ impl AppState {
             }
         }
     }
+
     pub fn select_prev_exp(&mut self) {
         let i = match self.expressions_state.selected() {
             Some(i) => {
@@ -363,11 +359,11 @@ impl AppState {
     pub fn rend_main_keybinds(&self, area: Rect, buf: &mut Buffer) {
         let (msg, style) = (
             vec![
-                "<H> ".green().bold(),
+                "<H> ".green(),
                 "Help Page ".into(),
-                "<R> ".red().bold(),
+                "<R> ".red(),
                 "Restart Program ".into(),
-                // "<S> ".white().bold(),
+                // "<S> ".white(),
                 // "Audio Cutter".into(),
             ],
             Style::default(),
@@ -376,7 +372,7 @@ impl AppState {
         let text = Text::from(Line::from(msg).patch_style(style));
         Paragraph::new(text)
             .block(
-                Block::bordered().title(Line::styled("Keybinds", Style::default().yellow().bold())),
+                Block::bordered().title(Line::styled("Keybinds", Style::default().yellow())),
             )
             .centered()
             .render(area, buf);
@@ -385,9 +381,9 @@ impl AppState {
     pub fn rend_top_keybs_area(&mut self, area: Rect, buf: &mut Buffer) {
         let (msg, style) = (
             vec![
-                "<Esc> ".red().bold(),
+                "<Esc> ".red(),
                 "Go Back ".into(),
-                "<G> ".green().bold(),
+                "<G> ".green(),
                 "Github Repo ".into(),
             ],
             Style::default(),
@@ -396,7 +392,7 @@ impl AppState {
         let text = Text::from(Line::from(msg).patch_style(style));
         Paragraph::new(text)
             .block(
-                Block::bordered().title(Line::styled("Keybinds", Style::default().yellow().bold())),
+                Block::bordered().title(Line::styled("Keybinds", Style::default().yellow())),
             )
             .centered()
             .render(area, buf);
@@ -415,12 +411,11 @@ impl AppState {
             .block(Block::bordered().title("Expression Keybinds <E>").style(
                 match self.keybinds.selected_section {
                     KeybindSections::Expressions => Style::default().yellow(),
-                    _ => Style::default().white(),
+                    _ => Style::default().dim(),
                 },
             ))
             .highlight_style(
                 Style::default()
-                    .add_modifier(Modifier::BOLD)
                     .add_modifier(Modifier::REVERSED)
                     .fg(Color::White),
             );
@@ -441,12 +436,11 @@ impl AppState {
             .block(Block::bordered().title("Sentence Keybinds <S>").style(
                 match self.keybinds.selected_section {
                     KeybindSections::Sentences => Style::default().yellow(),
-                    _ => Style::default().white(),
+                    _ => Style::default().dim(),
                 },
             ))
             .highlight_style(
                 Style::default()
-                    .add_modifier(Modifier::BOLD)
                     .add_modifier(Modifier::REVERSED)
                     .fg(Color::White),
             );
@@ -492,12 +486,11 @@ impl AppState {
             .block(Block::bordered().title("Search Keybinds <I>").style(
                 match self.keybinds.selected_section {
                     KeybindSections::Input => Style::default().yellow(),
-                    _ => Style::default().white(),
+                    _ => Style::default().dim(),
                 },
             ))
             .highlight_style(
                 Style::default()
-                    .add_modifier(Modifier::BOLD)
                     .add_modifier(Modifier::REVERSED)
                     .fg(Color::White),
             );
@@ -509,12 +502,14 @@ impl AppState {
         let i = match self.keybinds.selected_section {
             KeybindSections::Expressions => self.keybinds.exp_state.selected().unwrap_or(0),
             KeybindSections::Sentences => self.keybinds.sent_state.selected().unwrap_or(0),
+            KeybindSections::Notes => self.keybinds.note_state.selected().unwrap_or(0),
             KeybindSections::Input => self.keybinds.input_state.selected().unwrap_or(0),
         };
 
         let (about, _style) = match &self.keybinds.selected_section {
             KeybindSections::Expressions => (&self.keybinds.exp_abouts[i], Style::default()),
             KeybindSections::Sentences => (&self.keybinds.sent_abouts[i], Style::default().white()),
+            KeybindSections::Notes => (&self.keybinds.note_abouts[i], Style::default().white()),
             KeybindSections::Input => (&self.keybinds.input_abouts[i], Style::default().white()),
         };
 
@@ -523,7 +518,7 @@ impl AppState {
             .enumerate()
             .map(|(i, line)| {
                 if i == 0 {
-                    return Line::styled(line, Style::default().yellow().underlined().bold());
+                    return Line::styled(line, Style::default().yellow().underlined());
                 }
                 Line::styled(line, Style::default())
             })
@@ -534,7 +529,7 @@ impl AppState {
                 Block::bordered()
                     .title(Line::styled(
                         format!("{:?} Help & Explanations", self.keybinds.selected_section),
-                        Style::default().yellow().bold(),
+                        Style::default().yellow(),
                     ))
                     .style(Style::default()),
             )
@@ -555,6 +550,10 @@ impl AppState {
             KeybindSections::Sentences => {
                 _len = self.keybinds.sent_titles.len();
                 &mut self.keybinds.sent_state
+            }
+            KeybindSections::Notes => {
+                _len = self.keybinds.note_titles.len();
+                &mut self.keybinds.note_state
             }
             KeybindSections::Input => {
                 _len = self.keybinds.input_titles.len();
@@ -601,7 +600,6 @@ impl AppState {
 impl Keybinds {
     pub fn to_list_item(text: &str, _i: usize) -> ListItem {
         let (msg, style) = (
-            vec!["<".white(), text.yellow().bold(), ">".white()],
             vec!["<".white(), text.yellow(), ">".white()],
             Style::default(),
         );
@@ -612,7 +610,6 @@ impl Keybinds {
     pub fn new() -> Self {
         // exp
 
-        let exp_titles = ["I", "Y", "D", "Enter", "C-Enter", "Up", "Down"]
         let exp_titles = ["Enter", "C-Enter", "I", "Y", "D", "Up", "Down"]
             .iter()
             .map(|kb| kb.to_string())
@@ -633,7 +630,6 @@ impl Keybinds {
 
         // sent
 
-        let sent_titles = ["P", "L", "C-Enter", "Esc", "Up", "Down"]
         let sent_titles = ["P", "L", "Esc", "Up", "Down"]
             .iter()
             .map(|kb| kb.to_string())
@@ -642,7 +638,6 @@ impl Keybinds {
         let sent_abouts =[
                 "Plays the Sentence's Audio\n‎\nMassif.la sentences don't contain audio, so nothing will play.\n(WIP) You can set `\"tts\": true` in your config.json to generate audio for the sentence.",
                 "Opens Sentence in the Default Browser\n‎\nThis will take you to either Immersion Kit, or Massif.la's website with the sentence pasted into the searchbar.",
-                "[Ctrl + Enter] - Updates Anki Note for selected Expression\n‎\nIf no Note ID is specified in the Search Box, it will update the Note that matches the selected Expression.\nIf the selected Sentence was fetched from Massif.la, it will only update the Sentence field specified in your config.json.\nOtherwise it will update the Sentence, Audio, and Image fields.\n‎\nWarning: Overwrites existing data in the Anki fields specified in your config.json.",
                 "Focuses Expressions List\n‎\nUnfocuses the Sentences List & Focuses the Expressions List.",
                 "Selects the Previous Sentence\n‎\nFocuses the Previous Expression in the Sentences List.",
                 "Selects the Next Sentence\n‎\nFocuses the Next Sentence in the Sentences List.",
