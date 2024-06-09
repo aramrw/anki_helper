@@ -229,9 +229,20 @@ impl AppState {
     fn rend_sentences(&mut self, sentences_area: Rect, info_area: Rect, buf: &mut Buffer) {
         let horizontal = Layout::vertical([Constraint::Percentage(70), Constraint::Percentage(30)]);
         let [sentences_area, ntbc_area] = horizontal.areas(sentences_area);
+        self.rend_notes_to_be_created(ntbc_area, buf);
+
+
+        if self.expressions.is_empty() {
+            return;
+        }
 
         let mut sentence_items: Vec<ListItem> = Vec::new();
         if let Some(i) = self.selected_expression {
+
+            if !&self.expressions[i].sentences.is_some() {
+                return;
+            }
+
             let selected_exp = &self.expressions[i].clone();
             let sentences = selected_exp.sentences.clone();
             let dict_word = selected_exp.dict_word.clone();
@@ -335,27 +346,24 @@ impl AppState {
                 buf,
                 &mut self.expressions[i].sentences_state,
             );
-
-            self.rend_notes_to_be_created(ntbc_area, buf);
         }
     }
 
     fn rend_ntbc_kbs(&mut self, area: Rect, buf: &mut Buffer) {
         let mut extra = if self.select_mode == SelectMode::Ntbm {
-            vec!["<Esc> ".red(), "Focus Expressions ".white()]
-        } else {
-            vec!["<N> ".light_green(), "Focus Notes ".white()]
-        };
-
-        let (msg, style) = (
             vec![
+                "<Esc> ".red(),
+                "Focus Expressions ".white(),
                 "<C-Enter> ".green(),
                 "Create Note(s) ".white(),
                 "<D> ".red(),
                 "Delete Sentence ".white(),
-            ],
-            Style::default(),
-        );
+            ]
+        } else {
+            vec!["<N> ".light_green(), "Focus Notes ".white()]
+        };
+
+        let (msg, style) = (vec![], Style::default());
 
         extra.extend(msg);
 
@@ -363,7 +371,10 @@ impl AppState {
         Paragraph::new(text)
             .block(
                 Block::bordered()
-                    .title({ Line::styled("Note Keybinds", Style::default().light_yellow()) })
+                    .title(Line::styled(
+                        "Note Keybinds",
+                        Style::default().light_yellow(),
+                    ))
                     .style(match self.select_mode {
                         SelectMode::Ntbm => Style::default().yellow(),
                         _ => Style::default(),
