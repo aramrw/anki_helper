@@ -414,6 +414,91 @@ impl AppState {
             .render(area, buf);
     }
 
+    fn rend_notes_to_be_created(&mut self, area: Rect, buf: &mut Buffer) {
+        let horizontal = Layout::vertical([Constraint::Length(3), Constraint::Min(3)]);
+        let [kbs_area, sentences_area] = horizontal.areas(area);
+
+        self.rend_ntbc_kbs(kbs_area, buf);
+
+        if let Some(i) = self.selected_expression {
+            let i = self.notes_to_be_created.state.selected().unwrap_or(0);
+            let selected_note: Option<Sentence> = if !&self.notes_to_be_created.sentences.is_empty()
+            {
+                Some(self.notes_to_be_created.sentences[i].clone())
+            } else {
+                None
+            };
+
+            let sentence_items: Vec<ListItem> = self
+                .notes_to_be_created
+                .sentences
+                .iter()
+                .enumerate()
+                .map(|(i, sentence)| sentence.to_be_created_list_item(sentence, i))
+                .collect();
+
+            let span_title = if selected_note.is_some() {
+                Some(Line::from(vec![
+                    Span::styled(
+                        selected_note.unwrap().parent_expression.dict_word.clone(),
+                        Style::default().yellow(),
+                    ),
+                    Span::styled("'s Sentence", Style::default().white()),
+                ]))
+            } else {
+                None
+            };
+
+            let sentences_list = List::new(sentence_items)
+                .block(
+                    Block::bordered()
+                        .title({
+                            let current_sentence = self.get_current_sentence();
+                            if self.select_mode == SelectMode::Ntbm && span_title.is_some() {
+                                span_title.unwrap()
+                            } else if current_sentence.is_some()
+                                && self
+                                    .notes_to_be_created
+                                    .sentences
+                                    .contains(&current_sentence.unwrap())
+                            {
+                                Line::styled("Notes ", Style::default().light_green())
+                            } else {
+                                Line::styled("Notes ", Style::default().light_red())
+                            }
+                        })
+                        .style(match self.select_mode {
+                            SelectMode::Ntbm => Style::default().yellow(),
+                            _ => {
+                                let sentence = self.get_current_sentence();
+                                if sentence.is_some()
+                                    && self
+                                        .notes_to_be_created
+                                        .sentences
+                                        .contains(&sentence.unwrap())
+                                {
+                                    Style::default().light_green().dim()
+                                } else {
+                                    Style::default().light_red().dim()
+                                }
+                            }
+                        }),
+                )
+                .highlight_style(
+                    Style::default()
+                        .add_modifier(Modifier::REVERSED)
+                        .fg(Color::White),
+                );
+
+            StatefulWidget::render(
+                sentences_list,
+                sentences_area,
+                buf,
+                &mut self.notes_to_be_created.state,
+            );
+        }
+    }
+
     fn render_blank_sentence_info_block(&self, area: Rect, buf: &mut Buffer, has_sentences: &bool) {
         Block::bordered()
             .title("Sentence Information")
