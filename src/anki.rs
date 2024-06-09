@@ -194,7 +194,7 @@ impl AppState {
 
                 if config.options.del_words {
                     match self.delete_words_from_file(&words_to_delete) {
-                        Ok(_) => self.delete_exps_from_app_data(&words_to_delete),
+                        Ok(_) => {},
                         Err(err) => {
                             self.err_msg = Some(format!("Error Deleting Word from File: {}", err))
                         }
@@ -226,38 +226,6 @@ impl AppState {
         };
     }
 
-    fn delete_exps_from_app_data(&mut self, del_vec: &[String]) {
-        let mut indexes: Vec<usize> = self
-            .expressions
-            .iter()
-            .enumerate()
-            .filter_map(|(i, exp)| {
-                if del_vec.contains(&exp.dict_word) {
-                    Some(i)
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        // Sort the indexes in reverse order
-        indexes.sort_unstable_by(|a, b| b.cmp(a));
-
-        for &i in &indexes {
-            self.expressions.remove(i);
-        }
-
-        // Set the selected expression to the one before the last one that was deleted
-        let final_index = indexes.last().and_then(|&last_index| {
-            if last_index > 0 {
-                Some(last_index - 1)
-            } else {
-                None
-            }
-        });
-        self.selected_expression = final_index;
-        self.expressions_state.select(final_index);
-    }
 }
 
 fn url_into_file_name(url: &str) -> String {
