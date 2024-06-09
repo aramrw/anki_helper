@@ -381,6 +381,39 @@ impl AppState {
         }
     }
 
+    fn rend_ntbc_kbs(&mut self, area: Rect, buf: &mut Buffer) {
+        let mut extra = if self.select_mode == SelectMode::Ntbm {
+            vec!["<Esc> ".red(), "Focus Expressions ".white()]
+        } else {
+            vec!["<N> ".light_green(), "Focus Notes ".white()]
+        };
+
+        let (msg, style) = (
+            vec![
+                "<C-Enter> ".green(),
+                "Create Note(s) ".white(),
+                "<D> ".red(),
+                "Delete Sentence ".white(),
+            ],
+            Style::default(),
+        );
+
+        extra.extend(msg);
+
+        let text = Text::from(Line::from(extra).patch_style(style));
+        Paragraph::new(text)
+            .block(
+                Block::bordered()
+                    .title({ Line::styled("Note Keybinds", Style::default().light_yellow()) })
+                    .style(match self.select_mode {
+                        SelectMode::Ntbm => Style::default().yellow(),
+                        _ => Style::default(),
+                    }),
+            )
+            .centered()
+            .render(area, buf);
+    }
+
     fn render_blank_sentence_info_block(&self, area: Rect, buf: &mut Buffer, has_sentences: &bool) {
         Block::bordered()
             .title("Sentence Information")
