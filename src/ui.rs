@@ -242,11 +242,31 @@ impl AppState {
                 );
             //.highlight_symbol("⇢ ");
             //.highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
+        let words = List::new(words)
+            .block(
+                Block::bordered()
+                    .title(match self.select_mode {
+                        SelectMode::Expressions => {
+                            Line::styled("Expressions", Style::default().white())
+                        }
+                        _ => Line::styled("Expressions", Style::default()).white(),
+                    })
+                    .style(match self.select_mode {
+                        SelectMode::Expressions => Style::default().yellow(),
+                        _ => Style::default().dim(),
+                    }),
+            )
+            .highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::REVERSED)
+                    .fg(Color::White),
+            );
+        //.highlight_symbol("⇢ ");
+        //.highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
 
-            StatefulWidget::render(words, expressions_area, buf, &mut self.expressions_state);
-        }
+        StatefulWidget::render(words, area, buf, &mut self.expressions_state);
+    }
 
-        // sentences area
 
         let mut sentence_items: Vec<ListItem> = Vec::new();
         if let Some(i) = self.selected_expression {
