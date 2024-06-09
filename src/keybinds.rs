@@ -13,6 +13,7 @@ pub enum KeybindSections {
     #[default]
     Expressions,
     Sentences,
+    Notes,
     Input,
 }
 
@@ -21,12 +22,15 @@ pub struct Keybinds {
     pub exp_titles: Vec<String>,
     pub sent_titles: Vec<String>,
     pub input_titles: Vec<String>,
+    pub note_titles: Vec<String>,
     pub exp_state: ListState,
     pub sent_state: ListState,
     pub input_state: ListState,
+    pub note_state: ListState,
     pub exp_abouts: Vec<String>,
     pub sent_abouts: Vec<String>,
     pub input_abouts: Vec<String>,
+    pub note_abouts: Vec<String>,
     pub selected_section: KeybindSections,
 }
 
