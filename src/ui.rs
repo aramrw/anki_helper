@@ -499,6 +499,18 @@ impl AppState {
         }
     }
 
+    fn rend_main(&mut self, area: Rect, buf: &mut Buffer) {
+        let horizontal = Layout::horizontal([
+            Constraint::Percentage(15),
+            Constraint::Percentage(60),
+            Constraint::Percentage(25),
+        ])
+        .flex(layout::Flex::Center);
+        let [expressions_area, sentences_area, info_area] = horizontal.areas(area);
+        self.rend_expressions(expressions_area, buf);
+        self.rend_sentences(sentences_area, info_area, buf);
+    }
+
     fn render_blank_sentence_info_block(&self, area: Rect, buf: &mut Buffer, has_sentences: &bool) {
         Block::bordered()
             .title("Sentence Information")
