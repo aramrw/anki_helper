@@ -194,6 +194,35 @@ impl AppState {
                     .into();
                     match open_note_gui(bad_client, note_id) {
                         Ok(_) => match self.delete_word_from_file(current_word) {
+        match post_note_updates(requests_vec, client.client).await {
+            Ok(_) => {
+                let elapsed = instant.elapsed().as_secs();
+                self.info.msg = format!(
+                    "Updated Fields for {} Notes in {}s!",
+                    note_ids.len(),
+                    elapsed
+                )
+                .into();
+
+                self.notes_to_be_created.sentences.clear();
+                self.notes_to_be_created.state.select(None);
+                let words_to_delete: Vec<_> = self
+                    .expressions
+                    .iter_mut()
+                    .filter_map(|exp| {
+                        let wrd = &exp.dict_word.clone();
+                        if prnt_exps_vec.contains(wrd) {
+                            exp.sentences_state.select(None);
+                            Some(wrd.clone())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+
+                for wrd in words_to_delete {
+                    if config.options.del_words {
+                        match self.delete_word_from_file(&wrd) {
                             Ok(_) => {}
                             Err(err) => {
                                 self.err_msg =
