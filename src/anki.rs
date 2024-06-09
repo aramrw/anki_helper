@@ -119,25 +119,26 @@ impl AppState {
 
         if let Some(i) = self.selected_expression {
             let current_word = &self.expressions[i].dict_word.clone();
+        let sentence_objs_vec = &self.notes_to_be_created.sentences;
+        let mut note_ids: Vec<usize> = Vec::new();
 
-            let note_id = match self.input.text.trim().parse::<usize>() {
+        for current_sentence in sentence_objs_vec {
+            let exp = &current_sentence.parent_expression;
+
+            let id = match self.input.text.trim().parse::<usize>() {
                 Ok(id) => id, // if the parsing succeeds, use the parsed id
-                Err(_) => match check_note_exists(&client, current_word).await {
+                Err(_) => match check_note_exists(&client, &exp.dict_word).await {
                     Ok(id) => id,
                     Err(err) => {
-                        self.err_msg = Some(format!("Error: {}", err));
+                        self.err_msg =
+                            Some(format!("Error fetching Note: {}: {}", &exp.dict_word, err));
                         return;
                     }
                 },
             };
 
-            let sentence: Sentence = match &self.get_current_sentence() {
-                Some(sent) => sent.clone(),
-                None => {
-                    self.err_msg = Some("Error: Failed to Get Current Sentence".to_string());
-                    return;
-                }
-            };
+            note_ids.push(id);
+        }
 
             let (filename, local_audio_url) = if let Some(audio_url) = &sentence.audio_url {
                 let filename = url_into_file_name(audio_url);
