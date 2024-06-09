@@ -53,6 +53,7 @@ pub(crate) struct Sentence {
     pub media_title: String,
     pub wbst_link: String,
     pub parent_expression: Expression,
+    pub note_id: Option<u128>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -156,6 +157,7 @@ impl Sentence {
             media_title: media_title.to_string(),
             wbst_link: wbst_link.to_string(),
             parent_expression: parent_expression.clone(),
+            note_id: None,
         }
     }
     pub fn to_be_created_list_item(&self, sentence: &Sentence, i: usize) -> ListItem {

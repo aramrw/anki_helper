@@ -38,7 +38,10 @@ impl AppState {
     pub async fn handle_keybinds(&mut self, key: KeyEvent) -> io::Result<()> {
         if self.expressions.is_empty() {
             self.update_error_msg("words.txt Error", "The file is empty!".to_string());
-            self.read_words_file().unwrap();
+            match self.read_words_file() {
+                Ok(_) => {}
+                Err(err) => self.err_msg = Some(format!("Error Reading `words.txt`: {}", err)),
+            }
             return Ok(());
         }
         match self.selected_page {
@@ -94,7 +97,9 @@ impl AppState {
                             self.update_error_msg("Error Playing Audio", err.to_string());
                         }
                     }
-                    KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => self.check_notes_or_push(),
+                    KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => {
+                        self.check_notes_or_push()
+                    }
                     KeyCode::Esc => self.reset_sentences_index(),
                     KeyCode::Up => {
                         if self.selected_page == Pages::Splice {
@@ -129,9 +134,10 @@ impl AppState {
                         self.update_anki_cards().await;
                     }
                     KeyCode::Esc => self.select_mode = SelectMode::Expressions,
+                    KeyCode::Char('I') => self.select_mode = SelectMode::Input,
+                    KeyCode::Char('D') => self.delete_note(),
                     KeyCode::Up => self.select_prev_note(),
                     KeyCode::Down => self.select_next_note(),
-                    KeyCode::Char('D') => self.delete_note(),
                     _ => {}
                 },
                 // main page global keybinds
@@ -216,34 +222,34 @@ impl AppState {
         Ok(())
     }
 
-pub fn check_notes_or_push(&mut self) {
-    if let Some(sentence) = self.get_current_sentence() {
-        let mut found = false;
+    pub fn check_notes_or_push(&mut self) {
+        if let Some(sentence) = self.get_current_sentence() {
+            let mut found = false;
 
-        let mut new_sentences: Vec<Sentence> = self
-            .notes_to_be_created
-            .sentences
-            .iter()
-            .map(|ntb_sent| {
-                if ntb_sent.parent_expression.dict_word == sentence.parent_expression.dict_word {
-                    found = true;
-                    sentence.clone()
-                } else {
-                    ntb_sent.clone()
-                }
-            })
-            .collect();
+            let mut new_sentences: Vec<Sentence> = self
+                .notes_to_be_created
+                .sentences
+                .iter()
+                .map(|ntb_sent| {
+                    if ntb_sent.parent_expression.dict_word == sentence.parent_expression.dict_word
+                    {
+                        found = true;
+                        sentence.clone()
+                    } else {
+                        ntb_sent.clone()
+                    }
+                })
+                .collect();
 
-        if !found {
-            new_sentences.push(sentence.clone());
+            if !found {
+                new_sentences.push(sentence.clone());
+            }
+
+            self.notes_to_be_created.sentences = new_sentences;
         }
 
-        self.notes_to_be_created.sentences = new_sentences;
+        self.select_mode = SelectMode::Expressions;
     }
-
-    self.select_mode = SelectMode::Expressions;
-}
-
 
     pub fn delete_note(&mut self) {
         if self.notes_to_be_created.sentences.is_empty() {
@@ -641,8 +647,8 @@ impl Keybinds {
             .collect();
 
         let exp_abouts = [
-                "Fetches Sentences\n‎\nSentences may include, or exactly match the selected Expression in one of its forms.\nDepending on the word's rarity, either it's kanji form, or it's kana reading may provide more accurate results.\nSee `<C-Enter>` for more information on sentence accuracy.\n‎\nIf no sentences are found from Immersion Kit, it will fetch sentences from Massif.la.\nMassif.la sentences don't contain audio or images.\n(WIP) You can set `\"tts\": true` in your config.json to generate audio for the sentence.",
-                "[Ctrl + Enter] - Enables `Exact Search` for Immersion Kit Search Results\n‎\nThis will find sentences that contain a 1 to 1 match of the selected Expression.\n‎\nThis means that it will not try to match the Expressions kana reading.\nOr if the Expression is a verb, it will not recognize it's conjugated forms.\n‎\nIf no sentences are found from Immersion Kit with `Exact Search` enabled, it will still fetch from Massif.la (with `Exact Search` disabled).",
+                "Fetches Sentences\n‎\nFetches sentences from Immersion Kit, or Massif.la.\n‎\nSentences may include, or exactly match the selected Expression in one of its forms.\nDepending on the word's rarity, either it's kanji form, or it's kana reading may provide more accurate results.\nSee `<C-Enter>` for more information on sentence accuracy.\n‎\nIf no sentences are found from Immersion Kit, it will fetch sentences from Massif.la.\nMassif.la sentences don't contain audio or images.\n(WIP) You can set `\"tts\": true` in your config.json to generate audio for the sentence.",
+                "[Ctrl + Enter] - Enables `Exact Search`\n‎\nThis will find sentences that contain a 1 - 1 exact match of the selected Expression (only) on Immersion Kit.\n‎\nThis means that it will not try to match the Expressions kana reading(s).\nOr if the Expression is a verb, it will not recognize it's conjugated forms.\n‎\nIf no sentences are found from Immersion Kit with `Exact Search` enabled, it will still fetch from Massif.la (with `Exact Search` disabled).",
                 "Focuses the Search Box\n‎\nPress <I> to see Search Box keybinds.",
                 "Copies Selected Expression into Input Box\n‎\nPress <I> to see Search Box keybinds.",
                 "Deletes the Selected Expression\n‎\nThis will also remove the expression from your words.txt file.\nYou can set `\"del_word\": true` in your config.json to automatically delete selected Expressions from your words.txt after updating their Anki Notes.",
@@ -661,8 +667,8 @@ impl Keybinds {
             .collect();
 
         let sent_abouts =[
-                "Plays the Sentence's Audio\n‎\nMassif.la sentences don't contain audio, so nothing will play.\n(WIP) You can set `\"tts\": true` in your config.json to generate audio for the sentence.",
-                "Opens Sentence in the Default Browser\n‎\nThis will take you to either Immersion Kit, or Massif.la's website with the sentence pasted into the searchbar.",
+                "Plays Audio\n‎\nPlays the Sentence's Audio.\n‎\nMassif.la sentences don't contain audio, so nothing will play.\n(WIP) You can set `\"tts\": true` in your config.json to generate audio for the sentence.",
+                "Opens Sentence in the Default Browser\n‎\nThis will take you to either Immersion Kit, or Massif.la's website with the sentence pasted into the Search Bar.",
                 "Focuses Expressions List\n‎\nUnfocuses the Sentences List & Focuses the Expressions List.",
                 "Selects the Previous Sentence\n‎\nFocuses the Previous Expression in the Sentences List.",
                 "Selects the Next Sentence\n‎\nFocuses the Next Sentence in the Sentences List.",
@@ -673,15 +679,16 @@ impl Keybinds {
 
         // notes
 
-        let note_titles = ["C-Enter", "D", "N", "Esc"]
+        let note_titles = ["C-Enter", "D", "N", "I", "Esc"]
             .iter()
             .map(|kb| kb.to_string())
             .collect();
 
-        let note_abouts = ["[Ctrl + Enter] - Update Notes\n‎\nFinds, checks, then updates any Anki Notes that contain the selected Expressions.\nIf the selected Sentence was fetched from Massif.la, it will only update the Sentence field specified in your config.json.\nOtherwise it will update the Sentence, and Audio fields.\nSome entries on Immersion Kit do not contain an image file (ie. Skyrim).\nIf an image file exists, it will be added as well.\n‎\nWarning: Overwrites existing data in the Anki fields specified in your config.json except the Audio & Image fields, those will get appended to.",
+        let note_abouts = ["[Ctrl + Enter] - Update Notes\n‎\nFinds, checks, then updates any Anki Notes that contain the selected Expressions.\n‎\nIf the selected Sentence was fetched from Massif.la, it will only update the Sentence field specified in your config.json.\nOtherwise it will update the Sentence, Image, and Audio fields.\nNote: some entries on Immersion Kit may *not contain an image file (ie. -Skyrim).\n‎\nWarning: Will overwrite existing data in the Sentence field if successful.",
             "Deletes the Selected Sentence\n‎\nRemoves the sentence from the Notes list.",
             "Focuses the Notes Section\n‎\nFocuses the Notes section if it is not already focused.",
-            "Focuses to the Expressions Section\n‎\nFocuses the Expressions section if focused on the Notes section."
+            "Focuses Search Box\n‎\nFocuses the Search Box and awaits an Anki Note ID.\n‎\nAnki's search can sometimes be inconsistant, so you can specify the exact ID of the Note you want to update for each selected Sentence.\nSentences that don't have an ID specified will display `| Note ID: ?` in the title, indicating it will try to find a Note based on the Sentence's Expression.\n‎\nAn unspecified ID will never update an Anki Note that does not have an exact match.\nIf any of the selected Expressions fail to find an exact match (or ID), none of them will be updated.",
+            "Focuses to the Expressions Section\n‎\nFocuses the Expressions section if focused on the Notes section.",
             ]
             .iter()
             .map(|ab| ab.to_string())

@@ -12,7 +12,7 @@ use std::time::Instant;
 
 #[derive(Serialize, Deserialize)]
 struct Note {
-    id: u64,
+    id: u128,
     fields: HashMap<String, String>,
     audio: Option<Vec<Media>>,
     picture: Option<Vec<Media>>,
@@ -70,7 +70,7 @@ pub struct UserNoteFields {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ReqResult {
-    result: Option<Vec<u64>>,
+    result: Option<Vec<u128>>,
     error: Option<String>,
 }
 
@@ -116,18 +116,22 @@ impl AppState {
         };
 
         let sentence_objs_vec = &self.notes_to_be_created.sentences;
-        let mut note_ids: Vec<usize> = Vec::new();
+        let mut note_ids: Vec<u128> = Vec::new();
 
         for current_sentence in sentence_objs_vec {
-            let exp = &current_sentence.parent_expression;
+            if let Some(hard_coded_id) = current_sentence.note_id {
+                note_ids.push(hard_coded_id);
+                continue;
+            }
 
-            let id = match self.input.text.trim().parse::<usize>() {
+            let exp = &current_sentence.parent_expression;
+            let id = match self.input.text.trim().parse::<u128>() {
                 Ok(id) => id, // if the parsing succeeds, use the parsed id
                 Err(_) => match check_note_exists(&client, &exp.dict_word).await {
                     Ok(id) => id,
                     Err(err) => {
                         self.err_msg =
-                            Some(format!("Error fetching Note: {}: {}", &exp.dict_word, err));
+                            Some(format!("Error Fetching Note: {}: {}", &exp.dict_word, err));
                         return;
                     }
                 },
@@ -155,13 +159,13 @@ impl AppState {
             .for_each(|(i, anki_s)| {
                 let req: Request<UpdateNoteParams> = match &anki_s.filename.clone() {
                     Some(filename) => into_update_note_req(
-                        note_ids[i] as u64,
+                        note_ids[i] as u128,
                         &config.fields,
                         anki_s,
                         filename.to_string(),
                     ),
                     None => {
-                        into_update_only_sentence_req(note_ids[i] as u64, &config.fields, &anki_s)
+                        into_update_only_sentence_req(note_ids[i] as u128, &config.fields, &anki_s)
                     }
                 };
                 requests_vec.push(req);
@@ -194,7 +198,7 @@ impl AppState {
 
                 if config.options.del_words {
                     match self.delete_words_from_file(&words_to_delete) {
-                        Ok(_) => {},
+                        Ok(_) => {}
                         Err(err) => {
                             self.err_msg = Some(format!("Error Deleting Word from File: {}", err))
                         }
@@ -225,7 +229,6 @@ impl AppState {
             }
         };
     }
-
 }
 
 fn url_into_file_name(url: &str) -> String {
@@ -243,7 +246,7 @@ fn open_note_gui(client: &AnkiClient, id: usize) -> Result<(), Box<dyn std::erro
 async fn direct_find_note_from_word(
     client: &AnkiDirectClient,
     word: &str,
-) -> Result<u64, Box<dyn std::error::Error>> {
+) -> Result<u128, Box<dyn std::error::Error>> {
     let id_vec = NoteAction::find_note_ids(client, word).await?;
 
     match id_vec.last() {
@@ -336,7 +339,7 @@ fn write_audio_bytes_file(
 }
 
 fn into_update_only_sentence_req(
-    id: u64,
+    id: u128,
     anki_fields: &UserNoteFields,
     sentence: &AnkiSentence,
 ) -> Request<UpdateNoteParams> {
@@ -359,7 +362,7 @@ fn into_update_only_sentence_req(
 }
 
 fn into_update_note_req(
-    id: u64,
+    id: u128,
     anki_fields: &UserNoteFields,
     sentence: AnkiSentence,
     filename: String,
@@ -421,7 +424,7 @@ fn into_update_note_req(
 pub async fn check_note_exists(
     client: &AnkiDirectClient,
     current_exp: &str,
-) -> Result<usize, Box<dyn std::error::Error>> {
+) -> Result<u128, Box<dyn std::error::Error>> {
     let config = read_config()?;
 
     let note_id = direct_find_note_from_word(client, current_exp).await?;
@@ -448,7 +451,7 @@ pub async fn check_note_exists(
         }
 
         if *current_exp.trim() == *text || *current_exp.trim() == *result.trim() {
-            return Ok(note_id as usize);
+            return Ok(note_id);
         }
     }
 

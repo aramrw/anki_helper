@@ -65,9 +65,13 @@ impl AppState {
         let user_input = self.input.text.trim().to_lowercase();
         if let Ok(parsed) = user_input.parse::<usize>() {
             // return if searching for id
-            if parsed > 5000 {
-                self.input.mode = InputMode::FindID;
-                self.select_mode = SelectMode::Expressions;
+            if parsed > 10000 {
+                if let Some(i) = self.notes_to_be_created.state.selected() {
+                    self.input.mode = InputMode::FindID;
+                    self.notes_to_be_created.sentences[i].note_id = Some(parsed as u128);
+                    self.reset_input();
+                    self.select_mode = SelectMode::Ntbm;
+                }
                 return;
             }
 
@@ -109,17 +113,15 @@ impl AppState {
             .block(
                 Block::bordered()
                     .title(Line::from(vec![
-                        Span::styled("Search ", Color::Yellow), 
-                        Span::styled("⌕ ", Color::White), 
+                        Span::styled("Search ", Color::Yellow),
+                        Span::styled("⌕ ", Color::White),
                     ]))
                     .style(match self.select_mode {
-                        SelectMode::Input => {
-                            match self.input.mode {
-                                InputMode::Search => Style::default().green(),
-                                InputMode::FindID => Style::default().blue(),
-                                _ => Style::default().yellow(),
-                            }
-                        }
+                        SelectMode::Input => match self.input.mode {
+                            InputMode::Search => Style::default().green(),
+                            InputMode::FindID => Style::default().blue(),
+                            _ => Style::default().yellow(),
+                        },
                         _ => Style::default().dim(),
                     }),
             )

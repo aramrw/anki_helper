@@ -1,7 +1,7 @@
 use crate::app::{AppState, Pages, SelectMode, Sentence};
 use ratatui::{
     prelude::*,
-    widgets::{Block, List, ListItem, /* Padding */ Paragraph},
+    widgets::{Block, List, ListItem,  Padding,  Paragraph},
 };
 
 impl Widget for &mut AppState {
@@ -218,7 +218,7 @@ impl AppState {
             .highlight_style(
                 Style::default()
                     .add_modifier(Modifier::REVERSED)
-                    .fg(Color::White),
+                    .dim(),
             );
         //.highlight_symbol("⇢ ");
         //.highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
@@ -231,14 +231,12 @@ impl AppState {
         let [sentences_area, ntbc_area] = horizontal.areas(sentences_area);
         self.rend_notes_to_be_created(ntbc_area, buf);
 
-
         if self.expressions.is_empty() {
             return;
         }
 
         let mut sentence_items: Vec<ListItem> = Vec::new();
         if let Some(i) = self.selected_expression {
-
             if !&self.expressions[i].sentences.is_some() {
                 return;
             }
@@ -354,10 +352,12 @@ impl AppState {
             vec![
                 "<Esc> ".red(),
                 "Focus Expressions ".white(),
-                "<C-Enter> ".green(),
-                "Create Note(s) ".white(),
-                "<D> ".red(),
-                "Delete Sentence ".white(),
+                "<C-Enter> ".light_green(),
+                "Create Note(s) ".green(),
+                "<D> ".light_red(),
+                "Delete Sentence ".red(),
+                "<I> ".light_yellow(),
+                "Enter Note ID".yellow(),
             ]
         } else {
             vec!["<N> ".light_green(), "Focus Notes ".white()]
@@ -407,13 +407,20 @@ impl AppState {
                 .map(|(i, sentence)| sentence.to_be_created_list_item(sentence, i))
                 .collect();
 
-            let span_title = if selected_note.is_some() {
+            let span_title = if let Some(selected_note) = selected_note {
                 Some(Line::from(vec![
                     Span::styled(
-                        selected_note.unwrap().parent_expression.dict_word.clone(),
-                        Style::default().yellow(),
+                        selected_note.parent_expression.dict_word.clone(),
+                        Style::default().light_green(),
                     ),
-                    Span::styled("'s Sentence", Style::default().white()),
+                    Span::styled("'s Sentence | ", Style::default().white()),
+                    Span::styled("Note ID: ", Style::default().white()),
+                    Span::styled(
+                        selected_note
+                            .note_id
+                            .map_or_else(|| "?".to_string(), |id| id.to_string()),
+                        Style::default().light_green(),
+                    ),
                 ]))
             } else {
                 None
