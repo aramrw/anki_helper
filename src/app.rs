@@ -14,11 +14,13 @@ pub enum Pages {
 }
 
 #[derive(Default)]
+#[derive(Default, PartialEq)]
 pub enum SelectMode {
     #[default]
     Expressions,
     Sentences,
     Input,
+    Ntbm,
 }
 
 #[derive(Default, PartialEq)]
@@ -43,7 +45,7 @@ pub struct Info {
     pub found: Option<usize>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Sentence {
     pub sentence: String,
     pub audio_url: Option<String>,
@@ -51,8 +53,10 @@ pub(crate) struct Sentence {
     pub img_url: Option<String>,
     pub media_title: String,
     pub wbst_link: String,
+    pub parent_expression: Expression,
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Expression {
     pub dict_word: String,
     pub readings: Vec<String>,
@@ -61,6 +65,12 @@ pub(crate) struct Expression {
     pub selected_sentence: Option<usize>,
     pub definitions: Vec<String>,
     pub exact_search: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct NotesToBeCreated {
+    pub sentences: Vec<Sentence>,
+    pub state: ListState,
 }
 
 #[derive(Default)]
