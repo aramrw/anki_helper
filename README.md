@@ -1,6 +1,6 @@
 #### Requirements 
 - **[Anki](https://apps.ankiweb.net) is required**, and needs to be open and running for the program to work
-- #### Recommended 
+#### Recommended 
 - **[Yomitan](https://github.com/themoeway/yomitan)** - 🐐🐐🐐,
 #### Example Steps
 - **Create Anki Notes**
