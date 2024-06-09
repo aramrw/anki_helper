@@ -40,7 +40,6 @@ impl AppState {
             Some(msg) => (
                 msg.clone(),
                 Style::default()
-                    .bold()
                     .fg(Color::Green)
                     .add_modifier(Modifier::RAPID_BLINK),
             ),
@@ -81,15 +80,9 @@ impl AppState {
         let (msg, style) = match &self.err_msg {
             Some(msg) => (
                 msg.clone(),
-                Style::default()
-                    .red()
-                    .bold()
-                    .add_modifier(Modifier::RAPID_BLINK),
+                Style::default().red().add_modifier(Modifier::RAPID_BLINK),
             ),
-            None => (
-                "No Errors. :-)".to_string(),
-                Style::default().green().bold(),
-            ),
+            None => ("No Errors. :-)".to_string(), Style::default().green()),
         };
 
         let text = Text::from(Line::from(msg).patch_style(style));
@@ -123,11 +116,14 @@ impl AppState {
 
     fn rend_sentence_defs(&mut self, area: Rect, buf: &mut Buffer) {
         if let Some(i) = self.selected_expression {
-            let definitions = &self.expressions[i].definitions;
+            let definitions = match self.select_mode {
+                SelectMode::Sentences => &self.expressions[i].definitions,
+                _ => &self.expressions[i].definitions,
+            };
 
             let def_items = definitions.iter().enumerate().map(|(i, def)| {
                 let mixed_line = Line::from(vec![
-                    Span::styled(i.to_string(), Style::default().yellow().bold()),
+                    Span::styled(i.to_string(), Style::default().yellow()),
                     Span::styled(". ", Color::Green),
                     Span::styled(def, Style::default().white()),
                 ]);
@@ -135,10 +131,7 @@ impl AppState {
             });
 
             let title = Line::from(vec![
-                Span::styled(
-                    &self.expressions[i].dict_word,
-                    Style::default().yellow().bold(),
-                ),
+                Span::styled(&self.expressions[i].dict_word, Style::default().yellow()),
                 Span::styled("'s Definitions", Style::default().white()),
             ]);
 
@@ -169,40 +162,29 @@ impl AppState {
             Constraint::Length(3),
             Constraint::Percentage(45),
             Constraint::Percentage(50),
-        ]).flex(layout::Flex::Center);
+        ])
+        .flex(layout::Flex::Center);
 
         let [top_area, keybinds_area, about_area] = vertical.areas(area);
         self.rend_top_keybs_area(top_area, buf);
         self.rend_about(about_area, buf);
 
         let keybinds_horizontal = Layout::horizontal([
-            Constraint::Percentage(35),
-            Constraint::Percentage(35),
-            Constraint::Percentage(30),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
         ]);
 
-        let [exp_kbs_area, sentences_kbs_area, input_kbs_area] =
+        let [exp_kbs_area, sentences_kbs_area, notes_area, input_kbs_area] =
             keybinds_horizontal.areas(keybinds_area);
+
         self.rend_exp_keybinds(exp_kbs_area, buf);
         self.rend_sent_keybinds(sentences_kbs_area, buf);
+        self.rend_notes_keybinds(notes_area, buf);
         self.rend_input_keybinds(input_kbs_area, buf);
     }
 
-    fn rend_main(&mut self, area: Rect, buf: &mut Buffer) {
-        let horizontal = Layout::horizontal([
-            Constraint::Percentage(15),
-            Constraint::Percentage(60),
-            Constraint::Percentage(25),
-        ]).flex(layout::Flex::Center);
-        let [expressions_area, sentences_area, info_area] = horizontal.areas(area);
-
-        {
-            let words: Vec<ListItem> = self
-                .expressions
-                .iter()
-                .enumerate()
-                .map(|(i, word)| word.to_list_item(i))
-                .collect();
     fn rend_expressions(&mut self, area: Rect, buf: &mut Buffer) {
         let words: Vec<ListItem> = self
             .expressions
@@ -219,29 +201,6 @@ impl AppState {
             })
             .collect();
 
-            let words = List::new(words)
-                .block(
-                    Block::bordered()
-                        .title(match self.select_mode {
-                            SelectMode::Expressions => {
-                                Line::styled("Expressions", Style::default().white().bold())
-                            }
-                            _ => Line::styled("Expressions", Style::default()).white(),
-                        })
-                        .style(match self.select_mode {
-                            SelectMode::Expressions => Style::default().yellow().bold(),
-                            _ => Style::default(),
-                        }),
-                )
-                .highlight_style(
-                    Style::default()
-                        .add_modifier(Modifier::BOLD)
-                        .add_modifier(Modifier::REVERSED)
-                        .fg(Color::White)
-                        
-                );
-            //.highlight_symbol("⇢ ");
-            //.highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
         let words = List::new(words)
             .block(
                 Block::bordered()
@@ -515,30 +474,33 @@ impl AppState {
         Block::bordered()
             .title("Sentence Information")
             .style(match has_sentences {
-                true => Style::default().red().bold(),
+                true => Style::default().red().dim(),
                 false => match self.select_mode {
-                    SelectMode::Expressions => Style::default().green().bold(),
-                    SelectMode::Sentences => Style::default().yellow().bold(),
-                    _ => Style::default(),
+                    SelectMode::Expressions => Style::default().green(),
+                    SelectMode::Sentences => Style::default().yellow(),
+                    _ => Style::default().dim(),
                 },
             })
             .render(area, buf);
     }
 
     pub fn sentence_to_list_item<'a>(sentence: &'a str, word: &'a str, i: usize) -> ListItem<'a> {
-        let start = sentence.find(word).unwrap_or(0);
-        let end = start + word.len();
+        let (start, end) = sentence
+            .match_indices(word)
+            .next()
+            .map(|(start, word)| (start, start + word.len()))
+            .unwrap_or((0, 0));
 
         let before_word = &sentence[..start];
         let found_word = &sentence[start..end];
         let after_word = &sentence[end..];
 
         let mixed_line = Line::from(vec![
-            Span::styled("|", Color::Green),
-            Span::styled(i.to_string(), Style::default().yellow().bold()),
-            Span::styled("| ", Color::Green),
+            //Span::styled("|", Color::Green),
+            Span::styled(i.to_string(), Style::default().yellow()),
+            Span::styled(". ", Color::Green),
             Span::styled(before_word, Color::White),
-            Span::styled(found_word, Style::default().yellow().bold()),
+            Span::styled(found_word, Style::default().yellow()),
             Span::styled(after_word, Color::White),
         ]);
 
