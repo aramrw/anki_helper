@@ -164,6 +164,25 @@ impl AppState {
                 ),
                 None => into_update_only_sentence_req(note_id as u64, &config.fields, sentence),
             };
+        let mut requests_vec: Vec<Request<UpdateNoteParams>> = Vec::new();
+
+        anki_sentences
+            .into_iter()
+            .enumerate()
+            .for_each(|(i, anki_s)| {
+                let req: Request<UpdateNoteParams> = match &anki_s.filename.clone() {
+                    Some(filename) => into_update_note_req(
+                        note_ids[i] as u64,
+                        &config.fields,
+                        anki_s,
+                        filename.to_string(),
+                    ),
+                    None => {
+                        into_update_only_sentence_req(note_ids[i] as u64, &config.fields, &anki_s)
+                    }
+                };
+                requests_vec.push(req);
+            });
 
             match post_note_update(req).await {
                 Ok(_) => {
