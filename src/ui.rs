@@ -1,7 +1,7 @@
 use crate::app::{AppState, Pages, SelectMode, Sentence};
 use ratatui::{
     prelude::*,
-    widgets::{Block, List, ListItem,  Padding,  Paragraph},
+    widgets::{Block, List, ListItem, Paragraph},
 };
 
 impl Widget for &mut AppState {
@@ -70,7 +70,7 @@ impl AppState {
             Constraint::Percentage(40),
         ])
         .flex(layout::Flex::Center);
-        let [left, mid_left, mid_right, right] = horizontal.areas(area);
+        let [left, _mid_left, _mid_right, right] = horizontal.areas(area);
 
         self.rend_main_keybinds(right, buf);
         self.rend_input_box(left, buf);
@@ -215,11 +215,7 @@ impl AppState {
                         _ => Style::default().dim(),
                     }),
             )
-            .highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::REVERSED)
-                    .dim(),
-            );
+            .highlight_style(Style::default().add_modifier(Modifier::REVERSED).dim());
         //.highlight_symbol("⇢ ");
         //.highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
 
@@ -390,90 +386,87 @@ impl AppState {
 
         self.rend_ntbc_kbs(kbs_area, buf);
 
-        if let Some(i) = self.selected_expression {
-            let i = self.notes_to_be_created.state.selected().unwrap_or(0);
-            let selected_note: Option<Sentence> = if !&self.notes_to_be_created.sentences.is_empty()
-            {
-                Some(self.notes_to_be_created.sentences[i].clone())
-            } else {
-                None
-            };
+        let i = self.notes_to_be_created.state.selected().unwrap_or(0);
+        let selected_note: Option<Sentence> = if !&self.notes_to_be_created.sentences.is_empty() {
+            Some(self.notes_to_be_created.sentences[i].clone())
+        } else {
+            None
+        };
 
-            let sentence_items: Vec<ListItem> = self
-                .notes_to_be_created
-                .sentences
-                .iter()
-                .enumerate()
-                .map(|(i, sentence)| sentence.to_be_created_list_item(sentence, i))
-                .collect();
+        let sentence_items: Vec<ListItem> = self
+            .notes_to_be_created
+            .sentences
+            .iter()
+            .enumerate()
+            .map(|(i, sentence)| sentence.to_be_created_list_item(sentence, i))
+            .collect();
 
-            let span_title = if let Some(selected_note) = selected_note {
-                Some(Line::from(vec![
-                    Span::styled(
-                        selected_note.parent_expression.dict_word.clone(),
-                        Style::default().light_green(),
-                    ),
-                    Span::styled("'s Sentence | ", Style::default().white()),
-                    Span::styled("Note ID: ", Style::default().white()),
-                    Span::styled(
-                        selected_note
-                            .note_id
-                            .map_or_else(|| "?".to_string(), |id| id.to_string()),
-                        Style::default().light_green(),
-                    ),
-                ]))
-            } else {
-                None
-            };
+        let span_title = if let Some(selected_note) = selected_note {
+            Some(Line::from(vec![
+                Span::styled(
+                    selected_note.parent_expression.dict_word.clone(),
+                    Style::default().light_green(),
+                ),
+                Span::styled("'s Sentence | ", Style::default().white()),
+                Span::styled("Note ID: ", Style::default().white()),
+                Span::styled(
+                    selected_note
+                        .note_id
+                        .map_or_else(|| "?".to_string(), |id| id.to_string()),
+                    Style::default().light_green(),
+                ),
+            ]))
+        } else {
+            None
+        };
 
-            let sentences_list = List::new(sentence_items)
-                .block(
-                    Block::bordered()
-                        .title({
-                            let current_sentence = self.get_current_sentence();
-                            if self.select_mode == SelectMode::Ntbm && span_title.is_some() {
-                                span_title.unwrap()
-                            } else if current_sentence.is_some()
+        let sentences_list = List::new(sentence_items)
+            .block(
+                Block::bordered()
+                    .title({
+                        let current_sentence = self.get_current_sentence();
+                        if self.select_mode == SelectMode::Ntbm && span_title.is_some() {
+                            span_title.unwrap()
+                        } else if current_sentence.is_some()
+                            && self
+                                .notes_to_be_created
+                                .sentences
+                                .contains(&current_sentence.unwrap())
+                        {
+                            Line::styled("Notes ", Style::default().light_green())
+                        } else {
+                            Line::styled("Notes ", Style::default().light_red())
+                        }
+                    })
+                    .style(match self.select_mode {
+                        SelectMode::Ntbm => Style::default().yellow(),
+                        _ => {
+                            let sentence = self.get_current_sentence();
+                            if sentence.is_some()
                                 && self
                                     .notes_to_be_created
                                     .sentences
-                                    .contains(&current_sentence.unwrap())
+                                    .contains(&sentence.unwrap())
                             {
-                                Line::styled("Notes ", Style::default().light_green())
+                                Style::default().light_green().dim()
                             } else {
-                                Line::styled("Notes ", Style::default().light_red())
+                                Style::default().light_red().dim()
                             }
-                        })
-                        .style(match self.select_mode {
-                            SelectMode::Ntbm => Style::default().yellow(),
-                            _ => {
-                                let sentence = self.get_current_sentence();
-                                if sentence.is_some()
-                                    && self
-                                        .notes_to_be_created
-                                        .sentences
-                                        .contains(&sentence.unwrap())
-                                {
-                                    Style::default().light_green().dim()
-                                } else {
-                                    Style::default().light_red().dim()
-                                }
-                            }
-                        }),
-                )
-                .highlight_style(
-                    Style::default()
-                        .add_modifier(Modifier::REVERSED)
-                        .fg(Color::White),
-                );
-
-            StatefulWidget::render(
-                sentences_list,
-                sentences_area,
-                buf,
-                &mut self.notes_to_be_created.state,
+                        }
+                    }),
+            )
+            .highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::REVERSED)
+                    .fg(Color::White),
             );
-        }
+
+        StatefulWidget::render(
+            sentences_list,
+            sentences_area,
+            buf,
+            &mut self.notes_to_be_created.state,
+        );
     }
 
     fn rend_main(&mut self, area: Rect, buf: &mut Buffer) {
