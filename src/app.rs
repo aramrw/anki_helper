@@ -1,9 +1,8 @@
 use crate::keybinds::Keybinds;
-use anki_bridge::AnkiClient;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::{prelude::*, widgets::*};
 use std::io;
-//use std::sync::{Arc, Mutex};
+use crossterm::event;
+use crossterm::event::{Event, KeyCode, KeyEventKind};
 
 #[derive(Default, PartialEq)]
 pub enum Pages {
