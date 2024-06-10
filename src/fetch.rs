@@ -1,6 +1,3 @@
-use crate::anki::{find_newest_note, read_config};
-use anki_bridge::notes_actions::notes_info::NotesInfoRequest;
-use anki_bridge::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Cursor;

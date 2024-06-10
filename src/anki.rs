@@ -1,7 +1,5 @@
 #![allow(non_snake_case)]
 use crate::app::*;
-use anki_bridge::notes_actions::find_notes::FindNotesRequest;
-use anki_bridge::prelude::*;
 use anki_direct::notes::NoteAction;
 use anki_direct::AnkiClient as AnkiDirectClient;
 use futures_util::future::join_all;
@@ -238,11 +236,6 @@ fn url_into_file_name(url: &str) -> String {
         .to_string()
 }
 
-fn open_note_gui(client: &AnkiClient, id: usize) -> Result<(), Box<dyn std::error::Error>> {
-    client.request(GuiEditNoteRequest { note: id })?;
-    Ok(())
-}
-
 async fn direct_find_note_from_word(
     client: &AnkiDirectClient,
     word: &str,
@@ -252,34 +245,6 @@ async fn direct_find_note_from_word(
     match id_vec.last() {
         Some(id) => Ok(*id),
         None => Err(format!("No notes found for: {}", &word).into()),
-    }
-}
-
-fn find_note_from_word(
-    client: &AnkiClient,
-    word: &str,
-) -> Result<usize, Box<dyn std::error::Error>> {
-    let id_vec = client
-        .request(FindNotesRequest {
-            query: word.to_string(),
-        })?
-        .0;
-    match id_vec.last() {
-        Some(id) => Ok(*id),
-        None => Err(format!("No notes found for: {}", &word).into()),
-    }
-}
-
-#[allow(dead_code)]
-pub fn find_newest_note(client: &AnkiClient) -> Result<usize, Box<dyn std::error::Error>> {
-    let id_vec = client
-        .request(FindNotesRequest {
-            query: "is:new".to_string(),
-        })?
-        .0;
-    match id_vec.last() {
-        Some(id) => Ok(*id),
-        None => Err("ID for {} card not found".into()),
     }
 }
 
