@@ -46,85 +46,100 @@ impl AppState {
         }
         match self.selected_page {
             Pages::Main => match self.select_mode {
-                SelectMode::Expressions if key.kind == KeyEventKind::Press => match key.code {
-                    KeyCode::Char('I') => self.select_mode = SelectMode::Input,
-                    KeyCode::Char('Y') => self.handle_copy_to_input(),
-                    KeyCode::Char('D') => {
-                        if let Some(i) = self.selected_expression {
-                            let current_wrd = &self.expressions[i].dict_word.clone();
-                            match self.delete_words_from_file(&vec![current_wrd.to_string()]) {
-                                Ok(_) => {
-                                    self.info.msg =
-                                        format!("Deleted: {} from words.txt", &current_wrd).into()
+                SelectMode::Expressions if key.kind == KeyEventKind::Press => {
+                    if !self.handle_global_keybinds(key) {
+                        match key.code {
+                            KeyCode::Char('I') => self.select_mode = SelectMode::Input,
+                            KeyCode::Char('Y') => self.handle_copy_to_input(),
+                            KeyCode::Char('D') => {
+                                if let Some(i) = self.selected_expression {
+                                    let current_wrd = &self.expressions[i].dict_word.clone();
+                                    match self
+                                        .delete_words_from_file(&vec![current_wrd.to_string()])
+                                    {
+                                        Ok(_) => {
+                                            self.info.msg =
+                                                format!("Deleted: {} from words.txt", &current_wrd)
+                                                    .into()
+                                        }
+                                        Err(err) => self.update_error_msg(
+                                            "Err Deleting {} from words.txt: {}",
+                                            err.to_string(),
+                                        ),
+                                    }
                                 }
-                                Err(err) => self.update_error_msg(
-                                    "Err Deleting {} from words.txt: {}",
-                                    err.to_string(),
-                                ),
                             }
-                        }
-                    }
-                    KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => {
-                        if let Some(i) = self.selected_expression {
-                            self.expressions[i].sentences = None;
-                            self.expressions[i].exact_search = false;
-                            self.select_mode = SelectMode::Sentences;
-                            if self.expressions[i].sentences.is_none() {
-                                self.expressions[i].sentences_state.select(Some(0));
-                                self.fetch_sentences().await;
+                            KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => {
+                                if let Some(i) = self.selected_expression {
+                                    self.expressions[i].sentences = None;
+                                    self.expressions[i].exact_search = false;
+                                    self.select_mode = SelectMode::Sentences;
+                                    if self.expressions[i].sentences.is_none() {
+                                        self.expressions[i].sentences_state.select(Some(0));
+                                        self.fetch_sentences().await;
+                                    }
+                                }
                             }
-                        }
-                    }
-                    KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                        if let Some(i) = self.selected_expression {
-                            self.expressions[i].sentences = None;
-                            self.expressions[i].exact_search = true;
-                            self.select_mode = SelectMode::Sentences;
-                            if self.expressions[i].sentences.is_none() {
-                                self.expressions[i].sentences_state.select(Some(0));
-                                self.fetch_sentences().await;
+                            KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                                if let Some(i) = self.selected_expression {
+                                    self.expressions[i].sentences = None;
+                                    self.expressions[i].exact_search = true;
+                                    self.select_mode = SelectMode::Sentences;
+                                    if self.expressions[i].sentences.is_none() {
+                                        self.expressions[i].sentences_state.select(Some(0));
+                                        self.fetch_sentences().await;
+                                    }
+                                }
                             }
+                            KeyCode::Down => self.select_next_exp(),
+                            KeyCode::Up => self.select_prev_exp(),
+                            _ => {}
                         }
                     }
-                    KeyCode::Down => self.select_next_exp(),
-                    KeyCode::Up => self.select_prev_exp(),
-                    _ => {}
-                },
-                SelectMode::Sentences if key.kind == KeyEventKind::Press => match key.code {
-                    KeyCode::Char('L') => self.open_website_link(),
-                    KeyCode::Char('P') => {
-                        if let Err(err) = self.play_audio().await {
-                            self.update_error_msg("Error Playing Audio", err.to_string());
+                }
+                SelectMode::Sentences if key.kind == KeyEventKind::Press => {
+                    if !self.handle_global_keybinds(key) {
+                        match key.code {
+                            KeyCode::Char('L') => self.open_website_link(),
+                            KeyCode::Char('P') => {
+                                if let Err(err) = self.play_audio().await {
+                                    self.update_error_msg("Error Playing Audio", err.to_string());
+                                }
+                            }
+                            KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => {
+                                self.check_notes_or_push()
+                            }
+                            KeyCode::Esc => self.reset_sentences_index(),
+                            KeyCode::Up => {
+                                if self.selected_page == Pages::Splice {
+                                    return Ok(());
+                                }
+                                self.select_prev_sentence()
+                            }
+                            KeyCode::Down => {
+                                if self.selected_page == Pages::Splice {
+                                    return Ok(());
+                                }
+                                self.select_next_sentence()
+                            }
+                            _ => {}
                         }
                     }
-                    KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => {
-                        self.check_notes_or_push()
-                    }
-                    KeyCode::Esc => self.reset_sentences_index(),
-                    KeyCode::Up => {
-                        if self.selected_page == Pages::Splice {
-                            return Ok(());
+                }
+                SelectMode::Input if key.kind == KeyEventKind::Press => {
+                    if !self.handle_global_keybinds(key) {
+                        match key.code {
+                            KeyCode::Char('P') => self.handle_paste(),
+                            KeyCode::Esc => self.select_mode = SelectMode::Expressions,
+                            KeyCode::Enter => self.confirm_search_query().await,
+                            KeyCode::Backspace => self.delete_char(),
+                            KeyCode::Left => self.move_cursor_left(),
+                            KeyCode::Right => self.move_cursor_right(),
+                            KeyCode::Char(input_char) => self.enter_char(input_char),
+                            _ => {}
                         }
-                        self.select_prev_sentence()
                     }
-                    KeyCode::Down => {
-                        if self.selected_page == Pages::Splice {
-                            return Ok(());
-                        }
-                        self.select_next_sentence()
-                    }
-                    _ => {}
-                },
-                SelectMode::Input if key.kind == KeyEventKind::Press => match key.code {
-                    KeyCode::Char('P') => self.handle_paste(),
-                    KeyCode::Esc => self.select_mode = SelectMode::Expressions,
-                    KeyCode::Enter => self.confirm_search_query().await,
-                    KeyCode::Backspace => self.delete_char(),
-                    KeyCode::Left => self.move_cursor_left(),
-                    KeyCode::Right => self.move_cursor_right(),
-                    KeyCode::Char(input_char) => self.enter_char(input_char),
-                    _ => {}
-                },
+                }
                 SelectMode::Ntbm if key.kind == KeyEventKind::Press => match key.code {
                     KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
                         if self.notes_to_be_created.sentences.is_empty() {
@@ -141,23 +156,25 @@ impl AppState {
                     _ => {}
                 },
                 // main page global keybinds
-                _ => match key.code {
-                    KeyCode::Char('H') => {
-                        if self.keybinds.exp_state.selected().is_none() {
-                            self.keybinds.exp_state.select(Some(0));
-                        };
-                        self.selected_page = Pages::Help
-                    }
-                    KeyCode::Char('N') => {
-                        if self.notes_to_be_created.state.selected().is_none() {
-                            self.notes_to_be_created.state.select(Some(0));
-                        }
-                        self.select_mode = SelectMode::Ntbm
-                    }
-                    KeyCode::Char('M') => self.selected_page = Pages::Main,
-                    KeyCode::Char('R') => self.restart_program(),
-                    _ => {}
-                },
+                _ => {
+                    // KeyCode::Char('H') => {
+                    //     if self.keybinds.exp_state.selected().is_none() {
+                    //         self.keybinds.exp_state.select(Some(0));
+                    //     };
+                    //     self.selected_page = Pages::Help
+                    // }
+                    // KeyCode::Char('N') => {
+                    //     if self.notes_to_be_created.state.selected().is_none() {
+                    //         self.notes_to_be_created.state.select(Some(0));
+                    //     }
+                    //     self.select_mode = SelectMode::Ntbm
+                    // }
+                    // KeyCode::Char('M') => self.selected_page = Pages::Main,
+                    // KeyCode::Char('R') => self.restart_program(),
+                    // _ => {
+                    //     panic!("IT IS GETTING THEM AT LEAST");
+                    // }
+                }
             },
 
             Pages::Help => {
@@ -220,6 +237,34 @@ impl AppState {
             _ => {}
         }
         Ok(())
+    }
+
+    fn handle_global_keybinds(&mut self, key: KeyEvent) -> bool {
+        match key.code {
+            KeyCode::Char('H') => {
+                if self.keybinds.exp_state.selected().is_none() {
+                    self.keybinds.exp_state.select(Some(0));
+                };
+                self.selected_page = Pages::Help;
+                true
+            }
+            KeyCode::Char('N') => {
+                if self.notes_to_be_created.state.selected().is_none() {
+                    self.notes_to_be_created.state.select(Some(0));
+                }
+                self.select_mode = SelectMode::Ntbm;
+                true
+            }
+            KeyCode::Char('M') => {
+                self.selected_page = Pages::Main;
+                true
+            }
+            KeyCode::Char('R') => {
+                self.restart_program();
+                true
+            }
+            _ => false,
+        }
     }
 
     pub fn check_notes_or_push(&mut self) {
