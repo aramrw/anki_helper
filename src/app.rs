@@ -1,4 +1,6 @@
+use crate::anki::{read_config, ConfigJson};
 use crate::keybinds::Keybinds;
+use anki_direct::AnkiClient;
 use crossterm::event;
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{prelude::*, widgets::*};
@@ -84,28 +86,45 @@ pub(crate) struct AppState {
     pub keybinds: Keybinds,
     pub selected_page: Pages,
     pub notes_to_be_created: NotesToBeCreated,
+    pub client: AnkiClient,
+    pub config: ConfigJson,
 }
 
 impl AppState {
     pub(crate) fn new() -> Self {
+        let (config, err_msg) = match read_config() {
+            Ok(config) => (config, None),
+            Err(err) => (
+                ConfigJson::default(),
+                Some(format!("Error Reading `config.json`: {}", err)),
+            ),
+        };
+
         Self {
             expressions: Vec::new(),
             expressions_state: ListState::default(),
             selected_expression: Some(0),
             select_mode: SelectMode::Expressions,
-            err_msg: None,
+            err_msg,
             info: Info::default(),
             input: InputBox::default(),
             keybinds: Keybinds::new(),
             selected_page: Pages::Main,
             notes_to_be_created: NotesToBeCreated::default(),
+            client: AnkiClient::default(),
+            config,
         }
     }
 }
 
 impl AppState {
     pub async fn run(&mut self, mut term: Terminal<impl Backend>) -> io::Result<()> {
-        match self.read_words_file() {
+        // if let Err(e) = read_config() {
+        //     self.err_msg = Some(format!("Error Reading `config.json`: {}", e));
+        //     return Ok(());
+        // };
+
+        match self.read_words_file().await {
             Ok(_) => {}
             Err(err) => self.err_msg = Some(format!("Error Reading `words.txt`: {}", err)),
         }
