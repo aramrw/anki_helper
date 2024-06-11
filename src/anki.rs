@@ -1,8 +1,7 @@
 #![allow(non_snake_case)]
 use crate::app::*;
-use crate::cmds::write_to_errs_log;
 use anki_direct::notes::NoteAction;
-use anki_direct::AnkiClient as AnkiDirectClient;
+use anki_direct::{error::AnkiError, AnkiClient as AnkiDirectClient};
 use futures_util::future::join_all;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -44,21 +43,7 @@ struct Request<P: AnkiParams> {
     params: P,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct ConfigOptions {
-    pub del_words: bool,
-    pub tts: bool,
-}
-
-// other
-#[derive(Serialize, Deserialize, Clone)]
-pub struct ConfigJson {
-    pub fields: UserNoteFields,
-    pub media_path: String,
-    pub options: ConfigOptions,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct UserNoteFields {
     pub expression: String,
     pub sentence: String,
@@ -210,6 +195,44 @@ impl AppState {
             self.update_error_msg("Err Deleting Word from File", err.to_string());
         }
     }
+}
+
+pub async fn return_new_anki_words(
+    client: &AnkiDirectClient,
+    config: &ConfigJson,
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let ids = NoteAction::find_note_ids(client, "is:new").await?;
+    let infos = NoteAction::get_notes_infos(client, ids).await?;
+    let mut words: Vec<String> = Vec::new();
+
+    for n in infos {
+        let exp_html = match n.fields.get(&config.fields.expression) {
+            Some(html) => html,
+            None => {
+                return Err(format!(
+                    "Incorrect Field: `{}`; `expression` field in config has to match Anki Note!",
+                    &config.fields.expression
+                )
+                .into())
+            }
+        };
+
+        let re = regex::Regex::new(r">([^<]+)<")?;
+        let text = &exp_html.value;
+
+        let mut result = String::new();
+        for cap in re.captures_iter(text) {
+            result.push_str(&cap[1]);
+        }
+
+        if result.is_empty() {
+            words.push(text.trim().to_string());
+        } else {
+            words.push(result.trim().to_string());
+        }
+    }
+
+    Ok(words)
 }
 
 fn url_into_file_name(url: &str) -> String {
@@ -376,7 +399,6 @@ pub async fn check_note_exists(
     let config = read_config()?;
 
     let note_id = direct_find_note_from_word(client, current_exp).await?;
-
     let note_infos = NoteAction::get_notes_infos(client, vec![note_id]).await?;
 
     for n in note_infos {
