@@ -1,8 +1,8 @@
 use crate::keybinds::Keybinds;
-use ratatui::{prelude::*, widgets::*};
-use std::io;
 use crossterm::event;
 use crossterm::event::{Event, KeyCode, KeyEventKind};
+use ratatui::{prelude::*, widgets::*};
+use std::io;
 
 #[derive(Default, PartialEq)]
 pub enum Pages {
@@ -113,16 +113,18 @@ impl AppState {
         loop {
             self.draw(&mut term)?;
 
-            // handle key events & keybindings
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('Q') {
-                    return Ok(());
+            if event::poll(std::time::Duration::from_millis(5))? {
+                // handle key events & keybindings
+                if let Event::Key(key) = event::read()? {
+                    if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('Q') {
+                        return Ok(());
+                    }
+                    // src/keybinds.rs
+                    if self.expressions_state.selected().is_none() {
+                        self.expressions_state.select(Some(0));
+                    }
+                    self.handle_keybinds(key).await?
                 }
-                // src/keybinds.rs
-                if self.expressions_state.selected().is_none() {
-                    self.expressions_state.select(Some(0));
-                }
-                self.handle_keybinds(key).await?
             }
         }
     }
