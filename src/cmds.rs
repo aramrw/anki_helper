@@ -226,3 +226,20 @@ impl AppState {
         };
     }
 }
+
+pub fn write_to_errs_log(err_vec: &Vec<String>) -> std::io::Result<()> {
+    let file = OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open("err_log.txt")?;
+    
+    let mut writer = BufWriter::new(file);
+
+    for err in err_vec {
+        writeln!(writer, "{}", err)?;
+    }
+
+    writer.flush()?;
+
+    Ok(())
+}
