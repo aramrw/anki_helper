@@ -1,13 +1,14 @@
 {
-  "fields": {
-    "expression": "wordDictionaryForm",
-    "sentence": "sentence",
-    "sentence_audio": "sentenceAudio",
-    "image": "picture"
-  },
-  "media_path": "C:\\Users\\arami\\AppData\\Roaming\\Anki2\\User 1\\collection.media",
-  "options": {
-    "del_words": false,
-    "tts": false
-  }
+	"fields": {
+		"expression": "wordDictionaryForm",
+		"sentence": "sentence",
+		"sentence_audio": "sentenceAudio",
+		"image": "picture"
+	},
+	"media_path": "C:\\Users\\arami\\AppData\\Roaming\\Anki2\\User 1\\collection.media",
+	"options": {
+		"del_words": false,
+		"tts": false,
+		"auto_load_new_notes": true
+	}
 }

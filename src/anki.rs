@@ -107,6 +107,21 @@ pub struct UpdateNotesRes {
     pub total_len: usize,
 }
 
+#[derive(Serialize, Deserialize, Clone, Default)]
+pub struct ConfigOptions {
+    pub del_words: bool,
+    pub tts: bool,
+    pub auto_load_new_notes: bool,
+}
+
+// other
+#[derive(Serialize, Deserialize, Clone, Default)]
+pub struct ConfigJson {
+    pub fields: UserNoteFields,
+    pub media_path: String,
+    pub options: ConfigOptions,
+}
+
 pub async fn update_anki_cards(
     sentence_objs_vec: &Vec<Sentence>,
     config: &ConfigJson,
