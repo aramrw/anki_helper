@@ -3,12 +3,12 @@ use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind, KeyModi
 use crate::app::{AppState, Pages, SelectMode, Sentence};
 //use crate::audio::{decode_audio_bytes, trim_samples_from_start};
 use crate::anki::{read_config, update_anki_cards, UpdateNotesRes};
+use crate::cmds::write_to_errs_log;
 use ratatui::{
     prelude::*,
     widgets::{Block, List, ListItem, ListState, Paragraph},
 };
 use std::{io, time::Instant};
-use crate::cmds::write_to_errs_log;
 
 #[derive(Default, Debug, PartialEq)]
 pub enum KeybindSections {
@@ -39,11 +39,6 @@ pub struct Keybinds {
 impl AppState {
     pub async fn handle_keybinds(&mut self, key: KeyEvent) -> io::Result<()> {
         if self.expressions.is_empty() {
-            self.update_error_msg("words.txt Error", "The file is empty!".to_string());
-            match self.read_words_file() {
-                Ok(_) => {}
-                Err(err) => self.err_msg = Some(format!("Error Reading `words.txt`: {}", err)),
-            }
             return Ok(());
         }
         match self.selected_page {
