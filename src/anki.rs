@@ -1,12 +1,12 @@
 #![allow(non_snake_case)]
 use crate::app::*;
+use crate::cmds::write_to_errs_log;
 use anki_direct::notes::NoteAction;
 use anki_direct::AnkiClient as AnkiDirectClient;
 use futures_util::future::join_all;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
-use std::time::Instant;
 
 #[derive(Serialize, Deserialize)]
 struct Note {
@@ -44,21 +44,21 @@ struct Request<P: AnkiParams> {
     params: P,
 }
 
-#[derive(Serialize, Deserialize)]
-struct ConfigOptions {
-    del_words: bool,
-    tts: bool,
+#[derive(Serialize, Deserialize, Clone)]
+pub struct ConfigOptions {
+    pub del_words: bool,
+    pub tts: bool,
 }
 
 // other
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ConfigJson {
     pub fields: UserNoteFields,
     pub media_path: String,
-    options: ConfigOptions,
+    pub options: ConfigOptions,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct UserNoteFields {
     pub expression: String,
     pub sentence: String,
@@ -100,132 +100,100 @@ impl AnkiSentence {
     }
 }
 
-impl AppState {
-    pub async fn update_anki_cards(&mut self) {
-        let instant = Instant::now();
-        let client = AnkiDirectClient::default();
+pub struct UpdateNotesRes {
+    pub dict_words_vec: Vec<String>,
+    pub err_vec: Vec<String>,
+    pub success_len: usize,
+    pub total_len: usize,
+}
 
-        let config: ConfigJson = match read_config() {
-            Ok(config) => config,
+pub async fn update_anki_cards(
+    sentence_objs_vec: &Vec<Sentence>,
+    config: &ConfigJson,
+) -> Result<UpdateNotesRes, Box<dyn std::error::Error>> {
+    let client = AnkiDirectClient::default();
+
+    let mut err_vec: Vec<String> = Vec::new();
+
+    let mut note_ids_and_sentences: Vec<(Option<u128>, AnkiSentence)> = Vec::new();
+
+    for current_sentence in sentence_objs_vec {
+        let exp = &current_sentence.parent_expression;
+        let id = match check_note_exists(&client, &exp.dict_word).await {
+            Ok(id) => Some(id),
             Err(err) => {
-                self.err_msg = Some(format!("Error Reading Config: {}", err));
-                return;
+                let err = format!("`{}`: {}", &exp.dict_word, err);
+                err_vec.push(err);
+                None
             }
         };
 
-        let sentence_objs_vec = &self.notes_to_be_created.sentences;
-        let mut note_ids: Vec<u128> = Vec::new();
+        let anki_sentence = AnkiSentence::into_anki_sentence(current_sentence.clone(), config);
+        note_ids_and_sentences.push((id, anki_sentence));
+    }
 
-        for current_sentence in sentence_objs_vec {
-            if let Some(hard_coded_id) = current_sentence.note_id {
-                note_ids.push(hard_coded_id);
-                continue;
-            }
+    if note_ids_and_sentences.iter().all(|(id, _)| id.is_none()) {
+        return Err("Err: 0 IDs found. Check `err.log.txt` for errors.".into());
+    }
+    let nias_len = note_ids_and_sentences.len();
 
-            let exp = &current_sentence.parent_expression;
-            let id = match self.input.text.trim().parse::<u128>() {
-                Ok(id) => id, // if the parsing succeeds, use the parsed id
-                Err(_) => match check_note_exists(&client, &exp.dict_word).await {
-                    Ok(id) => id,
-                    Err(err) => {
-                        self.err_msg =
-                            Some(format!("Error Fetching Note: {}: {}", &exp.dict_word, err));
-                        return;
-                    }
-                },
+    let dict_words_vec: Vec<String> = note_ids_and_sentences
+        .iter()
+        .map(|s| s.1.sentence_obj.parent_expression.dict_word.clone())
+        .collect();
+
+    let mut requests_vec: Vec<Request<UpdateNoteParams>> = Vec::new();
+
+    note_ids_and_sentences.into_iter().for_each(|(id, anki_s)| {
+        if let Some(note_id) = id {
+            let req: Request<UpdateNoteParams> = match &anki_s.filename.clone() {
+                Some(filename) => {
+                    into_update_note_req(note_id, &config.fields, anki_s, filename.to_string())
+                }
+                None => into_update_only_sentence_req(note_id, &config.fields, &anki_s),
+            };
+            requests_vec.push(req);
+        }
+    });
+
+    match post_note_updates(requests_vec, client.client).await {
+        Ok(_) => {
+            let result = UpdateNotesRes {
+                dict_words_vec,
+                success_len: nias_len,
+                err_vec,
+                total_len: sentence_objs_vec.len(),
             };
 
-            note_ids.push(id);
+            Ok(result)
         }
+        Err(err) => Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Network Err: {}", err),
+        ))),
+    }
+}
 
-        let mut anki_sentences: Vec<AnkiSentence> = Vec::new();
-
-        for sentence in sentence_objs_vec {
-            anki_sentences.push(AnkiSentence::into_anki_sentence(sentence.clone(), &config));
-        }
-
-        let prnt_exps_vec: Vec<String> = anki_sentences
-            .iter()
-            .map(|sntce| sntce.sentence_obj.parent_expression.dict_word.clone())
+impl AppState {
+    #[allow(dead_code)]
+    pub fn delete_notes_after_update_wrapper(&mut self, res: &UpdateNotesRes) {
+        self.notes_to_be_created.state.select(None);
+        let words_to_delete: Vec<String> = self
+            .expressions
+            .iter_mut()
+            .filter_map(|exp| {
+                let wrd = &exp.dict_word.clone();
+                if res.dict_words_vec.contains(wrd) {
+                    Some(wrd.clone())
+                } else {
+                    None
+                }
+            })
             .collect();
 
-        let mut requests_vec: Vec<Request<UpdateNoteParams>> = Vec::new();
-
-        anki_sentences
-            .into_iter()
-            .enumerate()
-            .for_each(|(i, anki_s)| {
-                let req: Request<UpdateNoteParams> = match &anki_s.filename.clone() {
-                    Some(filename) => into_update_note_req(
-                        note_ids[i],
-                        &config.fields,
-                        anki_s,
-                        filename.to_string(),
-                    ),
-                    None => {
-                        into_update_only_sentence_req(note_ids[i], &config.fields, &anki_s)
-                    }
-                };
-                requests_vec.push(req);
-            });
-
-        match post_note_updates(requests_vec, client.client).await {
-            Ok(_) => {
-                let elapsed = instant.elapsed().as_secs();
-                self.info.msg = format!(
-                    "Updated Fields for {} Notes in {}s!",
-                    note_ids.len(),
-                    elapsed
-                )
-                .into();
-
-                self.notes_to_be_created.sentences.clear();
-                self.notes_to_be_created.state.select(None);
-                let words_to_delete: Vec<String> = self
-                    .expressions
-                    .iter_mut()
-                    .filter_map(|exp| {
-                        let wrd = &exp.dict_word.clone();
-                        if prnt_exps_vec.contains(wrd) {
-                            Some(wrd.clone())
-                        } else {
-                            None
-                        }
-                    })
-                    .collect();
-
-                if config.options.del_words {
-                    match self.delete_words_from_file(&words_to_delete) {
-                        Ok(_) => {}
-                        Err(err) => {
-                            self.err_msg = Some(format!("Error Deleting Word from File: {}", err))
-                        }
-                    }
-                }
-
-                self.select_mode = SelectMode::Expressions;
-
-                // match open_note_gui(bad_client, note_id) {
-                //     Ok(_) => match self.delete_word_from_file(current_word) {
-                //         Ok(_) => {}
-                //         Err(err) => {
-                //             self.err_msg =
-                //                 Some(format!("Error Deleting Word from File: {}", err))
-                //         }
-                //     },
-                //     Err(err) => {
-                //         self.err_msg = Some(format!("Error Opening Note GUI: {}", err));
-                //     }
-                // }
-            }
-            Err(err) => {
-                let elapsed = instant.elapsed().as_secs();
-                self.err_msg = Some(format!(
-                    "POST Error -> Failed to Update Anki Card: {} after {}s",
-                    err, elapsed
-                ));
-            }
-        };
+        if let Err(err) = self.delete_words_from_file(&words_to_delete) {
+            self.update_error_msg("Err Deleting Word from File", err.to_string());
+        }
     }
 }
 
