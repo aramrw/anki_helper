@@ -2,11 +2,13 @@ use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind, KeyModi
 //use ratatui::prelude::*;
 use crate::app::{AppState, Pages, SelectMode, Sentence};
 //use crate::audio::{decode_audio_bytes, trim_samples_from_start};
+use crate::anki::{read_config, update_anki_cards, UpdateNotesRes};
 use ratatui::{
     prelude::*,
     widgets::{Block, List, ListItem, ListState, Paragraph},
 };
-use std::io;
+use std::{io, time::Instant};
+use crate::cmds::write_to_errs_log;
 
 #[derive(Default, Debug, PartialEq)]
 pub enum KeybindSections {
@@ -146,7 +148,8 @@ impl AppState {
                             self.err_msg = Some("Error: You must have at least 1 sentence selected to update or create a Note".to_string());
                             return Ok(());
                         }
-                        self.update_anki_cards().await;
+
+                        self.handle_update_cards_wrapper().await;
                     }
                     KeyCode::Esc => self.select_mode = SelectMode::Expressions,
                     KeyCode::Char('I') => self.select_mode = SelectMode::Input,
@@ -155,26 +158,7 @@ impl AppState {
                     KeyCode::Down => self.select_next_note(),
                     _ => {}
                 },
-                // main page global keybinds
-                _ => {
-                    // KeyCode::Char('H') => {
-                    //     if self.keybinds.exp_state.selected().is_none() {
-                    //         self.keybinds.exp_state.select(Some(0));
-                    //     };
-                    //     self.selected_page = Pages::Help
-                    // }
-                    // KeyCode::Char('N') => {
-                    //     if self.notes_to_be_created.state.selected().is_none() {
-                    //         self.notes_to_be_created.state.select(Some(0));
-                    //     }
-                    //     self.select_mode = SelectMode::Ntbm
-                    // }
-                    // KeyCode::Char('M') => self.selected_page = Pages::Main,
-                    // KeyCode::Char('R') => self.restart_program(),
-                    // _ => {
-                    //     panic!("IT IS GETTING THEM AT LEAST");
-                    // }
-                }
+                _ => {}
             },
 
             Pages::Help => {
@@ -237,6 +221,58 @@ impl AppState {
             _ => {}
         }
         Ok(())
+    }
+
+    async fn handle_update_cards_wrapper(&mut self) {
+        let instant = Instant::now();
+        let config = match read_config() {
+            Ok(cfg) => cfg,
+            Err(e) => {
+                self.update_error_msg("Err Reading Config", e.to_string());
+                return;
+            }
+        };
+
+        let config_clone = config.clone();
+        let ntbc_sents = std::mem::take(&mut self.notes_to_be_created.sentences);
+
+        let mut res_err: String = String::new();
+
+        let res: Option<UpdateNotesRes> = match update_anki_cards(&ntbc_sents, &config_clone).await
+        {
+            Ok(res) => Some(res),
+            Err(e) => {
+                res_err = format!("Err Updating Notes: {}", e);
+                None
+            }
+        };
+
+        if res.is_none() {
+            self.err_msg = Some(res_err);
+            return;
+        }
+
+        self.select_mode = SelectMode::Expressions;
+
+        let res = res.unwrap();
+
+        if config.options.del_words {
+            self.delete_notes_after_update_wrapper(&res);
+        }
+
+        // write any errors that happened while creating notes to err_log.txt
+        if let Err(err) = write_to_errs_log(&res.err_vec) {
+            self.update_error_msg("Err Writing to Log:", err.to_string());
+        }
+
+        let elapsed = instant.elapsed().as_secs();
+        self.info.msg = Some(format!(
+            "🗸: {} | ✗: {} | total: {} | in {}s.",
+            res.success_len,
+            res.err_vec.len(),
+            res.total_len,
+            elapsed
+        ));
     }
 
     fn handle_global_keybinds(&mut self, key: KeyEvent) -> bool {
