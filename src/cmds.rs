@@ -136,8 +136,8 @@ impl AppState {
                         self.expressions.push(exp);
                     }
                 }
-                Err(_) => {
-                    todo!()
+                Err(e) => {
+                    self.update_error_msg("Err Loading New Anki Notes", e.to_string());
                 }
             };
         }
@@ -245,11 +245,38 @@ impl AppState {
     }
 }
 
+pub fn write_media(titles: Vec<String>) -> std::io::Result<()> {
+    let file = OpenOptions::new()
+        .read(true)
+        .append(true)
+        .create(true)
+        .open("data/media.txt")?;
+    let mut new_titles: Vec<String> = Vec::new();
+
+    let reader = BufReader::new(&file);
+    for line in reader.lines() {
+        let line = line?;
+        if !titles.contains(&line.trim().to_string()) {
+            continue;
+        }
+
+        new_titles.push(line);
+    }
+
+    let mut writer = BufWriter::new(&file);
+    for title in titles {
+        writeln!(writer, "{}", title)?;
+    }
+
+    writer.flush()?;
+    Ok(())
+}
+
 pub fn write_to_errs_log(err_vec: &Vec<String>) -> std::io::Result<()> {
     let file = OpenOptions::new()
         .append(true)
         .create(true)
-        .open("err_log.txt")?;
+        .open("data/err_log.txt")?;
 
     let mut writer = BufWriter::new(file);
 
