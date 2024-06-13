@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 use crate::app::*;
 use anki_direct::notes::NoteAction;
-use anki_direct::{error::AnkiError, AnkiClient as AnkiDirectClient};
+use anki_direct::AnkiClient as AnkiDirectClient;
 use futures_util::future::join_all;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -104,6 +104,7 @@ pub struct ConfigOptions {
 pub struct ConfigJson {
     pub fields: UserNoteFields,
     pub media_path: String,
+    pub priority: Vec<String>,
     pub options: ConfigOptions,
 }
 
@@ -114,16 +115,23 @@ pub async fn update_anki_cards(
     let client = AnkiDirectClient::default();
 
     let mut err_vec: Vec<String> = Vec::new();
-
+    let mut failed_words: Vec<&str> = Vec::new();
     let mut note_ids_and_sentences: Vec<(Option<u128>, AnkiSentence)> = Vec::new();
 
     for current_sentence in sentence_objs_vec {
+        if let Some(id) = current_sentence.note_id {
+            let anki_sentence = AnkiSentence::into_anki_sentence(current_sentence.clone(), config);
+            note_ids_and_sentences.push((Some(id), anki_sentence));
+            continue;
+        }
+
         let exp = &current_sentence.parent_expression;
         let id = match check_note_exists(&client, &exp.dict_word).await {
             Ok(id) => Some(id),
             Err(err) => {
                 let err = format!("`{}`: {}", &exp.dict_word, err);
                 err_vec.push(err);
+                failed_words.push(&exp.dict_word);
                 None
             }
         };
@@ -139,7 +147,14 @@ pub async fn update_anki_cards(
 
     let dict_words_vec: Vec<String> = note_ids_and_sentences
         .iter()
-        .map(|s| s.1.sentence_obj.parent_expression.dict_word.clone())
+        .filter_map(|s| {
+            let dw = s.1.sentence_obj.parent_expression.dict_word.clone();
+            if failed_words.contains(&dw.as_str()) {
+                None
+            } else {
+                Some(dw)
+            }
+        })
         .collect();
 
     let mut requests_vec: Vec<Request<UpdateNoteParams>> = Vec::new();
@@ -413,14 +428,23 @@ pub async fn check_note_exists(
             }
         };
         let re = regex::Regex::new(r">([^<]+)<")?;
-        let text = &exp_html.value;
+        let text = &exp_html.value.trim();
 
         let mut result = String::new();
         for cap in re.captures_iter(text) {
             result.push_str(&cap[1]);
         }
 
-        if *current_exp.trim() == *text || *current_exp.trim() == *result.trim() {
+        let current_exp = current_exp.trim();
+        let result = result.trim();
+
+        // panic!(
+        //     "exp: {:?} vs reg_res: {:?}",
+        //     current_exp.bytes(),
+        //     result.bytes()
+        // );
+
+        if current_exp == *text || current_exp == result {
             return Ok(note_id);
         }
     }
