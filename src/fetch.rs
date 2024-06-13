@@ -1,3 +1,4 @@
+use crate::cmds::write_media;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Cursor;
@@ -154,6 +155,7 @@ impl AppState {
             .json::<IKJsonSchema>()
             .await?;
 
+        //let mut titles: Vec<String> = Vec::new();
         let mut sentences: Vec<Sentence> = Vec::new();
         for item in resp.data {
             for empty_vec in item.dictionary {
@@ -175,17 +177,40 @@ impl AppState {
                     None
                 };
 
-                let wbst_link = format!("https://www.immersionkit.com/dictionary?keyword={}", &ex.sentence);
+                let wbst_link = format!(
+                    "https://www.immersionkit.com/dictionary?keyword={}",
+                    &ex.sentence
+                );
 
-                sentences.push(Sentence::from(
-                    &ex.sentence,
-                    Some(ex.sound_url),
-                    None,
-                    image_url,
-                    &ex.deck_name,
-                    &wbst_link,
-                    &parent_expression,
-                ));
+                // let title = &ex.deck_name;
+                // if !titles.contains(title) {
+                //     titles.push(title.to_string());
+                // }
+
+                if self.config.priority.is_empty() {
+                    sentences.push(Sentence::from(
+                        &ex.sentence,
+                        Some(ex.sound_url),
+                        None,
+                        image_url,
+                        &ex.deck_name,
+                        &wbst_link,
+                        &parent_expression,
+                    ));
+                    continue;
+                }
+
+                if self.config.priority.contains(&ex.deck_name) {
+                    sentences.push(Sentence::from(
+                        &ex.sentence,
+                        Some(ex.sound_url),
+                        None,
+                        image_url,
+                        &ex.deck_name,
+                        &wbst_link,
+                        &parent_expression,
+                    ));
+                }
             }
         }
 
@@ -194,6 +219,7 @@ impl AppState {
             return Ok(());
         }
 
+        //write_media(titles).unwrap();
         self.expressions[index].sentences = Some(sentences);
         Ok(())
     }
@@ -248,4 +274,3 @@ impl AppState {
         Ok(())
     }
 }
-
