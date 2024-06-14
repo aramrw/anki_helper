@@ -144,7 +144,6 @@ impl AppState {
                             return Ok(());
                         }
 
-                        self.selected_page = Pages::Help;
                         self.handle_update_cards_wrapper().await;
                     }
                     KeyCode::Esc => self.select_mode = SelectMode::Expressions,
