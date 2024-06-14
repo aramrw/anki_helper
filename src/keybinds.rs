@@ -38,9 +38,6 @@ pub struct Keybinds {
 
 impl AppState {
     pub async fn handle_keybinds(&mut self, key: KeyEvent) -> io::Result<()> {
-        if self.expressions.is_empty() {
-            return Ok(());
-        }
         match self.selected_page {
             Pages::Main => match self.select_mode {
                 SelectMode::Expressions if key.kind == KeyEventKind::Press => {
@@ -67,6 +64,9 @@ impl AppState {
                                 }
                             }
                             KeyCode::Enter if !key.modifiers.contains(KeyModifiers::CONTROL) => {
+                                if self.expressions.is_empty() {
+                                    return Ok(());
+                                }
                                 if let Some(i) = self.selected_expression {
                                     self.expressions[i].sentences = None;
                                     self.expressions[i].exact_search = false;
@@ -78,6 +78,9 @@ impl AppState {
                                 }
                             }
                             KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                                if self.expressions.is_empty() {
+                                    return Ok(());
+                                }
                                 if let Some(i) = self.selected_expression {
                                     self.expressions[i].sentences = None;
                                     self.expressions[i].exact_search = true;

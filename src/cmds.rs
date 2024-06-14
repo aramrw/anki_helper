@@ -137,7 +137,7 @@ impl AppState {
                     }
                 }
                 Err(e) => {
-                    self.update_error_msg("Err Loading New Anki Notes", e.to_string());
+                    self.update_error_msg("New Anki Notes Err", e.to_string());
                 }
             };
         }

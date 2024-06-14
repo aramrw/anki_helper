@@ -63,6 +63,9 @@ impl AppState {
 
     pub async fn confirm_search_query(&mut self) {
         let user_input = self.input.text.trim().to_lowercase();
+        if user_input.is_empty() {
+            return;
+        }
         if let Ok(parsed) = user_input.parse::<usize>() {
             // return if searching for id
             if parsed > 10000 {
