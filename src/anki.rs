@@ -210,6 +210,17 @@ impl AppState {
             self.update_error_msg("Err Deleting Word from File", err.to_string());
         }
     }
+
+    pub async fn open_note_gui(&mut self) {
+        if let Some(i) = self.notes_to_be_created.state.selected() {
+            if let Some(id) = self.notes_to_be_created.sentences[i].note_id {
+                match NoteAction::gui_edit_note(&self.client, id).await {
+                    Ok(res) => res,
+                    Err(e) => self.update_error_msg("Err Opening Note", e.to_string()),
+                }
+            }
+        }
+    }
 }
 
 pub async fn return_new_anki_words(
