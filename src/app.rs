@@ -57,7 +57,7 @@ pub(crate) struct Sentence {
     pub note_id: Option<u128>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub(crate) struct Expression {
     pub dict_word: String,
     pub readings: Vec<String>,
@@ -66,6 +66,7 @@ pub(crate) struct Expression {
     pub selected_sentence: Option<usize>,
     pub definitions: Vec<String>,
     pub exact_search: bool,
+    pub note_id: Option<u128>,
 }
 
 #[derive(Clone, Debug, PartialEq, Default)]
@@ -197,6 +198,7 @@ impl Expression {
         dict_word: String,
         _reading: Option<Vec<String>>,
         sentences: Option<Vec<Sentence>>,
+        note_id: Option<u128>
     ) -> Self {
         Self {
             dict_word,
@@ -206,6 +208,7 @@ impl Expression {
             selected_sentence: Some(0),
             definitions: Vec::new(),
             exact_search: false,
+            note_id,
         }
     }
 
