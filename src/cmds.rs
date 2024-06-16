@@ -121,15 +121,14 @@ impl AppState {
 
             for word in line.split_whitespace() {
                 self.expressions
-                    .push(Expression::from(word.to_string(), None, None));
+                    .push(Expression::from(word.to_string(), None, None, None));
             }
         }
 
         if self.config.options.auto_load_new_notes {
             match return_new_anki_words(&self.client, &self.config).await {
-                Ok(words) => {
-                    for word in words {
-                        let exp = Expression::from(word, None, None);
+                Ok(exps) => {
+                    for exp in exps {
                         if self.expressions.contains(&exp) {
                             continue;
                         }
