@@ -226,24 +226,32 @@ impl AppState {
 pub async fn return_new_anki_words(
     client: &AnkiDirectClient,
     config: &ConfigJson,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+) -> Result<Vec<Expression>, Box<dyn std::error::Error>> {
     let ids = NoteAction::find_note_ids(client, "is:new").await?;
-    let infos = NoteAction::get_notes_infos(client, ids).await?;
-    let mut words: Vec<String> = Vec::new();
+    let infos = NoteAction::get_notes_infos(client, &ids).await?;
+    let mut words: Vec<Expression> = Vec::new();
+    let mut error: Option<Box<dyn std::error::Error>> = None;
 
-    for n in infos {
+    infos.iter().enumerate().for_each(|(i, n)| {
+        if error.is_some() {
+            return;
+        }
+
         let exp_html = match n.fields.get(&config.fields.expression) {
             Some(html) => html,
             None => {
-                return Err(format!(
+                error = Some(
+                    format!(
                     "Incorrect Field: `{}`; `expression` field in config has to match Anki Note!",
                     &config.fields.expression
                 )
-                .into())
+                    .into(),
+                );
+                return;
             }
         };
 
-        let re = regex::Regex::new(r">([^<]+)<")?;
+        let re = regex::Regex::new(r">([^<]+)<").unwrap();
         let text = &exp_html.value;
 
         let mut result = String::new();
@@ -251,11 +259,20 @@ pub async fn return_new_anki_words(
             result.push_str(&cap[1]);
         }
 
+        let id = ids[i];
+        let mut exp: Expression = Expression::default();
         if result.is_empty() {
-            words.push(text.trim().to_string());
+            let text = text.trim().to_string();
+            exp = Expression::from(text, None, None, Some(id));
         } else {
-            words.push(result.trim().to_string());
+            let result = result.trim().to_string();
+            exp = Expression::from(result, None, None, Some(id));
         }
+        words.push(exp);
+    });
+
+    if let Some(err) = error {
+        return Err(err);
     }
 
     Ok(words)
