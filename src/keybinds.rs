@@ -154,11 +154,11 @@ impl AppState {
                     KeyCode::Char('D') => self.delete_note(),
                     KeyCode::Up => self.select_prev_note(),
                     KeyCode::Down => self.select_next_note(),
+                    KeyCode::Char('E') => self.open_note_gui().await,
                     _ => {}
                 },
                 _ => {}
             },
-
             Pages::Help => {
                 match self.keybinds.selected_section {
                     KeybindSections::Expressions if key.kind == KeyEventKind::Press => {
