@@ -227,8 +227,8 @@ pub async fn return_new_anki_words(
     client: &AnkiDirectClient,
     config: &ConfigJson,
 ) -> Result<Vec<Expression>, Box<dyn std::error::Error>> {
-    let ids = NoteAction::find_note_ids(client, "is:new").await?;
-    let infos = NoteAction::get_notes_infos(client, &ids).await?;
+    let mut ids = NoteAction::find_note_ids(client, "is:new").await?;
+    let infos = NoteAction::get_notes_infos(client, ids).await?;
     let mut words: Vec<Expression> = Vec::new();
     let mut error: Option<Box<dyn std::error::Error>> = None;
 
