@@ -10,6 +10,8 @@
 
 - **Create Anki Notes**
   - Use Yomitan's **Generate Anki Notes** feature, or by creating them individually.
+- **Getting Words**
+- The program will automatically grab your latest newest words form Anki, however you can add words that are not made yet... 👇
 - **Paste Expressions into `words.txt`**
   - They can be seperated by **newline**, any width space **space**, or **both**.
   - <img src="https://github.com/aramrw/anki_helper/assets/106574385/7151bfe8-2055-421c-a135-38982205f7b9" width="400" />
