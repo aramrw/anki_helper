@@ -8,9 +8,10 @@
 - **Add Anki Fields & Media Path to `config.json`**
 <p float="left"><img src="https://github.com/aramrw/anki_helper/assets/106574385/2c877ecf-1f15-4b36-97a7-91a49d03988c" width="200" /><img src="https://github.com/aramrw/anki_helper/assets/106574385/b614c438-5076-443c-925c-68ba9137189a" width="400" /><p float="left">
 
+
+## **Loading Words**
 - **Create Anki Notes**
   - Use Yomitan's **Generate Anki Notes** feature, or by creating them individually.
-## **Loading Words**
 ### The program will load your _New Cards_ automatically from Anki
 **however you can add words that are not made yet by**... 👇
 - **Pasting Expressions into `words.txt`**
