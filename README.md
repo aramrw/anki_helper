@@ -10,8 +10,8 @@
 
 - **Create Anki Notes**
   - Use Yomitan's **Generate Anki Notes** feature, or by creating them individually.
-### **Getting Words**
-**The program will load your _New Cards_ automatically from Anki**,
+## **Loading Words**
+### The program will load your _New Cards_ automatically from Anki
 **however you can add words that are not made yet by**... 👇
 - **Pasting Expressions into `words.txt`**
   - They can be seperated by **newline**, any width space **space**, or **both**.
