@@ -15,7 +15,7 @@
 ### The program will load your _New Cards_ automatically from Anki
 - `suspended` _New Cards_ will not appear within anki_helper.
 
-**You can also add words that are not made yet by**... 👇
+### You can also add words that are not made yet by... 👇
 1. **Pasting Expressions into `words.txt`**
     - They can be seperated by **newline**, any width **space**, or **both**.
     - <img src="https://github.com/aramrw/anki_helper/assets/106574385/7151bfe8-2055-421c-a135-38982205f7b9" width="400" />
