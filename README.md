@@ -10,10 +10,9 @@
 
 
 ## **Loading Words**
-- **Create Anki Notes**
-  - Use Yomitan's **Generate Anki Notes** feature, or by creating them individually.
 ### The program will load your _New Cards_ automatically from Anki
-- `suspended` _New Cards_ will not appear within anki_helper.
+  - Use Yomitan's **Generate Anki Notes** feature, or by creating them individually.
+- **`suspended` _New Cards_ will not appear within anki_helper**.
 
 ### You can also add words that are not made yet by... 👇
 1. **Pasting Expressions into `words.txt`**
