@@ -9,7 +9,7 @@
 <p float="left"><img src="https://github.com/aramrw/anki_helper/assets/106574385/2c877ecf-1f15-4b36-97a7-91a49d03988c" width="200" /><img src="https://github.com/aramrw/anki_helper/assets/106574385/b614c438-5076-443c-925c-68ba9137189a" width="400" /><p float="left">
 
 
-## **Loading Words**
+## Loading Words
 ### The program will load your _New Cards_ automatically from Anki
   - Use Yomitan's **Generate Anki Notes** feature, or by creating them individually.
 - **`suspended` _New Cards_ will not appear within anki_helper**.
@@ -21,8 +21,9 @@
 2. **Adding them via the `Search Box`**
     - Press `<I>` _(Shift + i)_ to focus the Search Box
     - Type in the word/expression & press `<Enter>`
-### Press Shift + h to Read the Help Page
-  - All keybinds are explained in the Help Page 👍 
+## Keybinds & Help
+### Press `<H>` _(Shift + h)_ to Read the Help Page
+  - All keybinds are shown & explained in the Help Page 👍
 
 ### RoadMap
 - [ ] Built-in Yomichan
