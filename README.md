@@ -25,7 +25,7 @@
 ### Press `<H>` _(Shift + h)_ to Read the Help Page
   - All keybinds are shown & explained in the Help Page 👍
 
-### RoadMap
+## RoadMap
 - [ ] Built-in Yomichan
   - [ ] Frequency Dicts
   - [ ] Hookup to [Yomichan Offline Audio Server](https://github.com/aramrw/yomichan_audio_server)
