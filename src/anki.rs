@@ -3,9 +3,14 @@ use crate::app::*;
 use anki_direct::notes::NoteAction;
 use anki_direct::AnkiClient as AnkiDirectClient;
 use futures_util::future::join_all;
+//use futures_util::join;
+//use color_eyre::owo_colors::OwoColorize;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
+use tokio::runtime::Runtime;
 
 #[derive(Serialize, Deserialize)]
 struct Note {
@@ -109,36 +114,49 @@ pub struct ConfigJson {
 }
 
 pub async fn update_anki_cards(
-    sentence_objs_vec: &Vec<Sentence>,
+    sentence_objs_vec: Vec<Sentence>,
     config: &ConfigJson,
 ) -> Result<UpdateNotesRes, Box<dyn std::error::Error>> {
     let client = AnkiDirectClient::default();
+    let client_clone = client.client.clone();
+    let sent_objs_vec_len = sentence_objs_vec.len();
 
     let mut err_vec: Vec<String> = Vec::new();
     let mut failed_words: Vec<&str> = Vec::new();
-    let mut note_ids_and_sentences: Vec<(Option<u128>, AnkiSentence)> = Vec::new();
+    //let mut note_ids_and_sentences: Vec<(Option<u128>, AnkiSentence)> = Vec::new();
+    
+    let mut results: Vec<Result<(Option<u128>, AnkiSentence), tokio::task::JoinError>> = Vec::new();
+        let tasks: Vec<_> = sentence_objs_vec
+            .into_iter()
+            .map(|sent| {
+                let config = config.clone();
+                let client = client.clone();
+                tokio::task::spawn(async move {
+                    if let Some(id) = sent.parent_expression.note_id {
+                        let anki_sentence = AnkiSentence::into_anki_sentence(sent.clone(), &config);
+                        return (Some(id), anki_sentence);
+                    }
 
-    for current_sentence in sentence_objs_vec {
-        if let Some(id) = current_sentence.note_id {
-            let anki_sentence = AnkiSentence::into_anki_sentence(current_sentence.clone(), config);
-            note_ids_and_sentences.push((Some(id), anki_sentence));
-            continue;
-        }
+                    let exp = &sent.parent_expression;
+                    let id = match check_note_exists(&client, &exp.dict_word).await {
+                        Ok(id) => Some(id),
+                        Err(_e) => {
+                            // Handle error appropriately
+                            None
+                        }
+                    };
 
-        let exp = &current_sentence.parent_expression;
-        let id = match check_note_exists(&client, &exp.dict_word).await {
-            Ok(id) => Some(id),
-            Err(err) => {
-                let err = format!("`{}`: {}", &exp.dict_word, err);
-                err_vec.push(err);
-                failed_words.push(&exp.dict_word);
-                None
-            }
-        };
+                    let anki_sentence = AnkiSentence::into_anki_sentence(sent.clone(), &config);
+                    (id, anki_sentence)
+                })
+            })
+            .collect();
 
-        let anki_sentence = AnkiSentence::into_anki_sentence(current_sentence.clone(), config);
-        note_ids_and_sentences.push((id, anki_sentence));
-    }
+        // Await all the tasks to complete
+        results = join_all(tasks).await;
+
+    let note_ids_and_sentences: Vec<(Option<u128>, AnkiSentence)> =
+        results.into_iter().map(|res| res.unwrap()).collect();
 
     if note_ids_and_sentences.iter().all(|(id, _)| id.is_none()) {
         return Err("Err: 0 IDs found. Check `err.log.txt` for errors.".into());
@@ -146,7 +164,7 @@ pub async fn update_anki_cards(
     let nias_len = note_ids_and_sentences.len();
 
     let dict_words_vec: Vec<String> = note_ids_and_sentences
-        .iter()
+        .par_iter()
         .filter_map(|s| {
             let dw = s.1.sentence_obj.parent_expression.dict_word.clone();
             if failed_words.contains(&dw.as_str()) {
@@ -157,27 +175,29 @@ pub async fn update_anki_cards(
         })
         .collect();
 
-    let mut requests_vec: Vec<Request<UpdateNoteParams>> = Vec::new();
+    let requests_vec: Vec<Request<UpdateNoteParams>> = note_ids_and_sentences
+        .into_par_iter()
+        .filter_map(|(id, anki_s)| {
+            if let Some(note_id) = id {
+                let req: Request<UpdateNoteParams> = match &anki_s.filename.clone() {
+                    Some(filename) => {
+                        into_update_note_req(note_id, &config.fields, anki_s, filename.to_string())
+                    }
+                    None => into_update_only_sentence_req(note_id, &config.fields, &anki_s),
+                };
+                return Some(req);
+            }
+            None
+        })
+        .collect();
 
-    note_ids_and_sentences.into_iter().for_each(|(id, anki_s)| {
-        if let Some(note_id) = id {
-            let req: Request<UpdateNoteParams> = match &anki_s.filename.clone() {
-                Some(filename) => {
-                    into_update_note_req(note_id, &config.fields, anki_s, filename.to_string())
-                }
-                None => into_update_only_sentence_req(note_id, &config.fields, &anki_s),
-            };
-            requests_vec.push(req);
-        }
-    });
-
-    match post_note_updates(requests_vec, client.client).await {
+    match post_note_updates(requests_vec, &client_clone).await {
         Ok(_) => {
             let result = UpdateNotesRes {
                 dict_words_vec,
                 success_len: nias_len,
                 err_vec,
-                total_len: sentence_objs_vec.len(),
+                total_len: sent_objs_vec_len,
             };
 
             Ok(result)
@@ -195,7 +215,7 @@ impl AppState {
         self.notes_to_be_created.state.select(None);
         let words_to_delete: Vec<String> = self
             .expressions
-            .iter_mut()
+            .par_iter_mut()
             .filter_map(|exp| {
                 let wrd = &exp.dict_word.clone();
                 if res.dict_words_vec.contains(wrd) {
@@ -212,8 +232,11 @@ impl AppState {
     }
 
     pub async fn open_note_gui(&mut self) {
-        if let Some(i) = self.notes_to_be_created.state.selected() {
-            if let Some(id) = self.notes_to_be_created.sentences[i].note_id {
+        if self.expressions.is_empty() {
+            return;
+        }
+        if let Some(i) = self.selected_expression {
+            if let Some(id) = self.expressions[i].note_id {
                 match NoteAction::gui_edit_note(&self.client, id).await {
                     Ok(res) => res,
                     Err(e) => self.update_error_msg("Err Opening Note", e.to_string()),
@@ -226,28 +249,33 @@ impl AppState {
 pub async fn return_new_anki_words(
     client: &AnkiDirectClient,
     config: &ConfigJson,
-) -> Result<Vec<Expression>, Box<dyn std::error::Error>> {
-    let mut ids = NoteAction::find_note_ids(client, "is:new").await?;
-    let infos = NoteAction::get_notes_infos(client, ids).await?;
-    let mut words: Vec<Expression> = Vec::new();
-    let mut error: Option<Box<dyn std::error::Error>> = None;
+    query: &str,
+) -> Result<Vec<Expression>, Box<dyn std::error::Error + Send + Sync>> {
+    let ids = NoteAction::find_note_ids(client, query).await?;
+    let infos = NoteAction::get_notes_infos(client, ids.clone()).await?;
 
-    infos.iter().enumerate().for_each(|(i, n)| {
-        if error.is_some() {
-            return;
+    // Shared error state
+    let error: Arc<Mutex<Option<Box<dyn std::error::Error + Send + Sync>>>> =
+        Arc::new(Mutex::new(None));
+
+    let words: Vec<Expression> = infos.par_iter().enumerate().filter_map(|(i, n)| {
+        // Check if there is already an error
+        if error.lock().unwrap().is_some() {
+            return None;
         }
 
         let exp_html = match n.fields.get(&config.fields.expression) {
             Some(html) => html,
             None => {
-                error = Some(
+                let mut error = error.lock().unwrap();
+                *error = Some(
                     format!(
-                    "Incorrect Field: `{}`; `expression` field in config has to match Anki Note!",
-                    &config.fields.expression
-                )
+                        "Incorrect Field: `{}`; `expression` field in config has to match Anki Note!",
+                        &config.fields.expression
+                    )
                     .into(),
                 );
-                return;
+                return None;
             }
         };
 
@@ -260,18 +288,17 @@ pub async fn return_new_anki_words(
         }
 
         let id = ids[i];
-        let mut exp: Expression = Expression::default();
-        if result.is_empty() {
-            let text = text.trim().to_string();
-            exp = Expression::from(text, None, None, Some(id));
+        let exp: Expression = if result.is_empty() {
+            Expression::from(text.trim().to_string(), None, None, Some(id))
         } else {
-            let result = result.trim().to_string();
-            exp = Expression::from(result, None, None, Some(id));
-        }
-        words.push(exp);
-    });
+            Expression::from(result.trim().to_string(), None, None, Some(id))
+        };
 
-    if let Some(err) = error {
+        Some(exp)
+    }).collect();
+
+    // Check if there was an error
+    if let Some(err) = error.lock().unwrap().take() {
         return Err(err);
     }
 
@@ -299,10 +326,10 @@ async fn direct_find_note_from_word(
 
 async fn post_note_updates(
     reqs: Vec<Request<UpdateNoteParams>>,
-    client: reqwest::Client,
+    client: &reqwest::Client,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let futures: Vec<_> = reqs
-        .into_iter()
+        .par_iter()
         .map(|req| client.post("http://localhost:8765").json(&req).send())
         .collect();
 
@@ -444,40 +471,42 @@ pub async fn check_note_exists(
     let note_id = direct_find_note_from_word(client, current_exp).await?;
     let note_infos = NoteAction::get_notes_infos(client, vec![note_id]).await?;
 
-    for n in note_infos {
-        let exp_html = match n.fields.get(&config.fields.expression) {
-            Some(html) => html,
-            None => {
-                return Err(format!(
+    let doesnt_exist: String = note_infos
+        .par_iter()
+        .filter_map(|n| {
+            let exp_html = match n.fields.get(&config.fields.expression) {
+                Some(html) => html,
+                None => {
+                    return Some(format!(
                     "Incorrect Field: `{}`; `expression` field in config has to match Anki Note!",
                     &config.fields.expression
-                )
-                .into())
+                ))
+                }
+            };
+            let re = regex::Regex::new(r">([^<]+)<").unwrap();
+            let text = &exp_html.value.trim();
+
+            let mut result = String::new();
+            for cap in re.captures_iter(text) {
+                result.push_str(&cap[1]);
             }
-        };
-        let re = regex::Regex::new(r">([^<]+)<")?;
-        let text = &exp_html.value.trim();
 
-        let mut result = String::new();
-        for cap in re.captures_iter(text) {
-            result.push_str(&cap[1]);
-        }
+            let current_exp = current_exp.trim();
+            let result = result.trim();
 
-        let current_exp = current_exp.trim();
-        let result = result.trim();
+            if current_exp == *text || current_exp == result {
+                return None;
+            }
 
-        // panic!(
-        //     "exp: {:?} vs reg_res: {:?}",
-        //     current_exp.bytes(),
-        //     result.bytes()
-        // );
+            Some(format!("Can't find `{}` in any decks!", current_exp))
+        })
+        .collect();
 
-        if current_exp == *text || current_exp == result {
-            return Ok(note_id);
-        }
+    if !doesnt_exist.is_empty() {
+        return Err(doesnt_exist.into());
     }
 
-    Err(format!("Can't find `{}` in any decks!", current_exp).into())
+    Ok(note_id)
 }
 
 pub fn read_config() -> Result<ConfigJson, std::io::Error> {
