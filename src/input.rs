@@ -66,6 +66,16 @@ impl AppState {
         if user_input.is_empty() {
             return;
         }
+
+        if self.input.mode == InputMode::Rename {
+            if let Some(i) = self.expressions_state.selected() {
+                self.expressions[i].dict_word.clone_from(&user_input);
+                self.reset_input();
+                self.input.mode = InputMode::Normal;
+                self.select_mode = SelectMode::Expressions;
+            }
+        }
+
         if let Ok(parsed) = user_input.parse::<usize>() {
             // return if searching for id
             if parsed > 10000 {
@@ -103,7 +113,7 @@ impl AppState {
             self.input.mode = InputMode::Search;
             self.select_mode = SelectMode::Expressions;
             self.expressions
-                .push(Expression::from(user_input.clone(), None, None));
+                .push(Expression::from(user_input.clone(), None, None, None));
             let i = self.expressions.len() - 1;
             self.expressions_state.select(Some(i));
             self.selected_expression = Some(i);

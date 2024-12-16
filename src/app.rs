@@ -30,6 +30,7 @@ pub enum InputMode {
     Search,
     //Grep,
     FindID,
+    Rename,
 }
 
 #[derive(Default)]
@@ -42,9 +43,8 @@ pub struct InputBox {
 #[derive(Default)]
 pub struct Info {
     pub msg: Option<String>,
-    pub found: Option<usize>,
+    pub _found: Option<usize>,
 }
-
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Sentence {
     pub sentence: String,
@@ -198,7 +198,7 @@ impl Expression {
         dict_word: String,
         _reading: Option<Vec<String>>,
         sentences: Option<Vec<Sentence>>,
-        note_id: Option<u128>
+        note_id: Option<u128>,
     ) -> Self {
         Self {
             dict_word,

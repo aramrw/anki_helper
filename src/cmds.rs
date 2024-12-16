@@ -1,6 +1,7 @@
-use crate::anki::{return_new_anki_words, ConfigJson};
+use crate::anki::return_new_anki_words;
 use crate::app::*;
 use arboard::Clipboard;
+use rayon::prelude::*;
 use std::fs::{File, OpenOptions};
 use std::io::{self, prelude::*, BufReader, BufWriter};
 use std::process::Command;
@@ -25,7 +26,7 @@ impl AppState {
     pub fn delete_exps_from_app_data(&mut self, del_vec: &[String]) {
         let mut indexes: Vec<usize> = self
             .expressions
-            .iter()
+            .par_iter()
             .enumerate()
             .filter_map(|(i, exp)| {
                 if del_vec.contains(&exp.dict_word) {
@@ -126,7 +127,7 @@ impl AppState {
         }
 
         if self.config.options.auto_load_new_notes {
-            match return_new_anki_words(&self.client, &self.config).await {
+            match return_new_anki_words(&self.client, &self.config, "is:new -is:suspended").await {
                 Ok(exps) => {
                     for exp in exps {
                         if self.expressions.contains(&exp) {
@@ -154,32 +155,25 @@ impl AppState {
         Ok(())
     }
 
-    pub async fn fetch_sentences(&mut self) {
+    pub async fn fetch_sentences(&mut self, is_massif: bool) {
         if let Some(i) = self.selected_expression {
             let instant = Instant::now();
             let current_word = self.expressions[i].dict_word.clone();
 
-            let format_url = if self.expressions[i].exact_search {
-                format!(
-                "https://api.immersionkit.com/look_up_dictionary?keyword={}&exact=true&sort=shortness",
+            let format_url = format!(
+                "https://api.immersionkit.com/look_up_dictionary?keyword={}&sort=shortness",
                 &current_word
-            )
-            } else {
-                format!(
-                    "https://api.immersionkit.com/look_up_dictionary?keyword={}&sort=shortness",
-                    &current_word
-                )
-            };
+            );
 
             match self
-                .fetch_ik_api(self.expressions[i].clone(), i, format_url)
+                .fetch_ik_api(self.expressions[i].clone(), i, format_url, is_massif)
                 .await
             {
                 Ok(_) => {
                     self.err_msg = None;
                     if self.expressions[i].exact_search {
                         self.info.msg = format!(
-                            "Fetched Exact Sentences for {} in {}s",
+                            "Fetched Massif Sentences for {} in {}s",
                             &current_word,
                             instant.elapsed().as_secs()
                         )
@@ -244,7 +238,7 @@ impl AppState {
     }
 }
 
-pub fn write_media(titles: Vec<String>) -> std::io::Result<()> {
+pub fn _write_media(titles: Vec<String>) -> std::io::Result<()> {
     let file = OpenOptions::new()
         .read(true)
         .append(true)

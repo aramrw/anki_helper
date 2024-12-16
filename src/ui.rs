@@ -3,6 +3,7 @@ use ratatui::{
     prelude::*,
     widgets::{Block, List, ListItem, Paragraph},
 };
+use rayon::prelude::*;
 
 impl Widget for &mut AppState {
     fn render(self, area: Rect, buf: &mut Buffer) {
@@ -121,14 +122,18 @@ impl AppState {
                 _ => &self.expressions[i].definitions,
             };
 
-            let def_items = definitions.iter().enumerate().map(|(i, def)| {
-                let mixed_line = Line::from(vec![
-                    Span::styled(i.to_string(), Style::default().yellow()),
-                    Span::styled(". ", Color::Green),
-                    Span::styled(def, Style::default().white()),
-                ]);
-                ListItem::new(mixed_line)
-            });
+            let def_items: Vec<ListItem> = definitions
+                .par_iter()
+                .enumerate()
+                .map(|(i, def)| {
+                    let mixed_line = Line::from(vec![
+                        Span::styled(i.to_string(), Style::default().yellow()),
+                        Span::styled(". ", Color::Green),
+                        Span::styled(def, Style::default().white()),
+                    ]);
+                    ListItem::new(mixed_line)
+                })
+                .collect();
 
             let title = Line::from(vec![
                 Span::styled(&self.expressions[i].dict_word, Style::default().yellow()),
@@ -188,14 +193,24 @@ impl AppState {
     fn rend_expressions(&mut self, area: Rect, buf: &mut Buffer) {
         let words: Vec<ListItem> = self
             .expressions
-            .iter()
+            .par_iter()
             .enumerate()
             .map(|(i, exp)| {
-                let item = exp.to_list_item(i);
-                for sent_obj in &self.notes_to_be_created.sentences {
-                    if sent_obj.parent_expression.dict_word == *exp.dict_word {
-                        return item.bg(Color::Green);
-                    }
+                let mut item = exp.to_list_item(i);
+                if self
+                    .notes_to_be_created
+                    .sentences
+                    .par_iter()
+                    .find_map_first(|sent_obj| {
+                        if sent_obj.parent_expression.dict_word == *exp.dict_word {
+                            Some(())
+                        } else {
+                            None
+                        }
+                    })
+                    .is_some()
+                {
+                    item = item.bg(Color::Green);
                 }
                 item
             })
@@ -244,7 +259,7 @@ impl AppState {
 
             let sentences: Option<&Vec<Sentence>> = if let Some(sentences) = &sentences {
                 sentence_items = sentences
-                    .iter()
+                    .par_iter()
                     .enumerate()
                     .map(|(i, sentence)| {
                         let sent_obj = &sentence;
@@ -396,7 +411,7 @@ impl AppState {
         let sentence_items: Vec<ListItem> = self
             .notes_to_be_created
             .sentences
-            .iter()
+            .par_iter()
             .enumerate()
             .map(|(i, sentence)| sentence.to_be_created_list_item(sentence, i))
             .collect();
@@ -411,6 +426,7 @@ impl AppState {
                 Span::styled("Note ID: ", Style::default().white()),
                 Span::styled(
                     selected_note
+                        .parent_expression
                         .note_id
                         .map_or_else(|| "?".to_string(), |id| id.to_string()),
                     Style::default().light_green(),

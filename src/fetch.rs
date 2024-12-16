@@ -1,4 +1,5 @@
-use crate::cmds::write_media;
+//use crate::cmds::write_media;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Cursor;
@@ -122,19 +123,22 @@ impl AppState {
             .json::<MassifJsonSchema>()
             .await?;
 
-        let mut sentences: Vec<Sentence> = Vec::new();
-        for item in resp.results {
-            let wbst_link = format!("https://massif.la/ja/search?q={}", &item.text);
-            sentences.push(Sentence::from(
-                &item.text,
-                None,
-                None,
-                None,
-                &item.sample_source.title,
-                &wbst_link,
-                &parent_expression,
-            ));
-        }
+        let sentences: Vec<Sentence> = resp
+            .results
+            .par_iter()
+            .map(|item| {
+                let wbst_link = format!("https://massif.la/ja/search?q={}", &item.text);
+                Sentence::from(
+                    &item.text,
+                    None,
+                    None,
+                    None,
+                    &item.sample_source.title,
+                    &wbst_link,
+                    &parent_expression,
+                )
+            })
+            .collect();
 
         if sentences.is_empty() {
             return Err("0 Sentences Found!".into());
@@ -149,7 +153,13 @@ impl AppState {
         parent_expression: Expression,
         index: usize,
         format_url: String,
+        is_massif: bool,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        if is_massif {
+            self.fetch_massif_sentences().await?;
+            return Ok(());
+        }
+
         let resp = reqwest::get(&format_url)
             .await?
             .json::<IKJsonSchema>()
@@ -157,12 +167,14 @@ impl AppState {
 
         //let mut titles: Vec<String> = Vec::new();
         let mut sentences: Vec<Sentence> = Vec::new();
+
         for item in resp.data {
             for empty_vec in item.dictionary {
                 for section in empty_vec {
                     self.expressions[index]
                         .definitions
                         .extend(section.glossary_list);
+
                     if !parent_expression.readings.contains(&section.reading)
                         && self.expressions[index].dict_word != section.reading
                     {
@@ -170,48 +182,51 @@ impl AppState {
                     }
                 }
             }
-            for ex in item.examples {
-                let image_url = if !ex.image_url.is_empty() {
-                    Some(ex.image_url.to_string())
-                } else {
+
+            let item_sents: Vec<Sentence> = item
+                .examples
+                .into_iter()
+                .filter_map(|ex| {
+                    let image_url = if !ex.image_url.is_empty() {
+                        Some(ex.image_url.to_string())
+                    } else {
+                        None
+                    };
+
+                    let wbst_link = format!(
+                        "https://www.immersionkit.com/dictionary?keyword={}",
+                        &ex.sentence
+                    );
+
+                    if self.config.priority.is_empty() {
+                        return Some(Sentence::from(
+                            &ex.sentence,
+                            Some(ex.sound_url),
+                            None,
+                            image_url,
+                            &ex.deck_name,
+                            &wbst_link,
+                            &parent_expression,
+                        ));
+                    }
+
+                    if self.config.priority.contains(&ex.deck_name) {
+                        return Some(Sentence::from(
+                            &ex.sentence,
+                            Some(ex.sound_url),
+                            None,
+                            image_url,
+                            &ex.deck_name,
+                            &wbst_link,
+                            &parent_expression,
+                        ));
+                    }
+
                     None
-                };
+                })
+                .collect();
 
-                let wbst_link = format!(
-                    "https://www.immersionkit.com/dictionary?keyword={}",
-                    &ex.sentence
-                );
-
-                // let title = &ex.deck_name;
-                // if !titles.contains(title) {
-                //     titles.push(title.to_string());
-                // }
-
-                if self.config.priority.is_empty() {
-                    sentences.push(Sentence::from(
-                        &ex.sentence,
-                        Some(ex.sound_url),
-                        None,
-                        image_url,
-                        &ex.deck_name,
-                        &wbst_link,
-                        &parent_expression,
-                    ));
-                    continue;
-                }
-
-                if self.config.priority.contains(&ex.deck_name) {
-                    sentences.push(Sentence::from(
-                        &ex.sentence,
-                        Some(ex.sound_url),
-                        None,
-                        image_url,
-                        &ex.deck_name,
-                        &wbst_link,
-                        &parent_expression,
-                    ));
-                }
-            }
+            sentences = item_sents;
         }
 
         if sentences.is_empty() {

@@ -1,14 +1,14 @@
 use crossterm::event::{/*self, Event */ KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 //use ratatui::prelude::*;
-use crate::app::{AppState, Pages, SelectMode, Sentence};
-//use crate::audio::{decode_audio_bytes, trim_samples_from_start};
-use crate::anki::{read_config, update_anki_cards, UpdateNotesRes};
-use crate::cmds::write_to_errs_log;
 use ratatui::{
     prelude::*,
     widgets::{Block, List, ListItem, ListState, Paragraph},
 };
 use std::{io, time::Instant};
+
+use crate::anki::{read_config, return_new_anki_words, update_anki_cards, UpdateNotesRes};
+use crate::app::{AppState, InputMode, Pages, SelectMode, Sentence};
+use crate::cmds::write_to_errs_log;
 
 #[derive(Default, Debug, PartialEq)]
 pub enum KeybindSections {
@@ -43,6 +43,28 @@ impl AppState {
                 SelectMode::Expressions if key.kind == KeyEventKind::Press => {
                     if !self.handle_global_keybinds(key) {
                         match key.code {
+                            KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                                self.input.mode = InputMode::Rename;
+                                self.select_mode = SelectMode::Input;
+                            }
+                            KeyCode::Char('E') => self.open_note_gui().await,
+                            KeyCode::Char('S') => {
+                                match return_new_anki_words(&self.client, &self.config, "is:new")
+                                    .await
+                                {
+                                    Ok(exps) => {
+                                        for exp in exps {
+                                            if self.expressions.contains(&exp) {
+                                                continue;
+                                            }
+                                            self.expressions.push(exp);
+                                        }
+                                    }
+                                    Err(e) => {
+                                        self.update_error_msg("New Anki Notes Err", e.to_string());
+                                    }
+                                };
+                            }
                             KeyCode::Char('I') => self.select_mode = SelectMode::Input,
                             KeyCode::Char('Y') => self.handle_copy_to_input(),
                             KeyCode::Char('D') => {
@@ -69,11 +91,10 @@ impl AppState {
                                 }
                                 if let Some(i) = self.selected_expression {
                                     self.expressions[i].sentences = None;
-                                    self.expressions[i].exact_search = false;
                                     self.select_mode = SelectMode::Sentences;
                                     if self.expressions[i].sentences.is_none() {
                                         self.expressions[i].sentences_state.select(Some(0));
-                                        self.fetch_sentences().await;
+                                        self.fetch_sentences(false).await;
                                     }
                                 }
                             }
@@ -83,11 +104,10 @@ impl AppState {
                                 }
                                 if let Some(i) = self.selected_expression {
                                     self.expressions[i].sentences = None;
-                                    self.expressions[i].exact_search = true;
                                     self.select_mode = SelectMode::Sentences;
                                     if self.expressions[i].sentences.is_none() {
                                         self.expressions[i].sentences_state.select(Some(0));
-                                        self.fetch_sentences().await;
+                                        self.fetch_sentences(true).await;
                                     }
                                 }
                             }
@@ -154,7 +174,6 @@ impl AppState {
                     KeyCode::Char('D') => self.delete_note(),
                     KeyCode::Up => self.select_prev_note(),
                     KeyCode::Down => self.select_next_note(),
-                    KeyCode::Char('E') => self.open_note_gui().await,
                     _ => {}
                 },
                 _ => {}
@@ -236,8 +255,7 @@ impl AppState {
 
         let mut res_err: String = String::new();
 
-        let res: Option<UpdateNotesRes> = match update_anki_cards(&ntbc_sents, &config_clone).await
-        {
+        let res: Option<UpdateNotesRes> = match update_anki_cards(ntbc_sents, &config_clone).await {
             Ok(res) => Some(res),
             Err(e) => {
                 res_err = format!("Err Updating Notes: {}", e);
@@ -293,8 +311,12 @@ impl AppState {
                 self.selected_page = Pages::Main;
                 true
             }
-            KeyCode::Char('R') => {
+            KeyCode::Char('R') if !key.modifiers.contains(KeyModifiers::CONTROL) => {
                 self.restart_program();
+                true
+            }
+            KeyCode::Char('C') => {
+                self.err_msg = None;
                 true
             }
             _ => false,
@@ -439,6 +461,9 @@ impl AppState {
     }
 
     pub fn select_prev_exp(&mut self) {
+        if self.expressions.is_empty() {
+            return;
+        }
         let i = match self.expressions_state.selected() {
             Some(i) => {
                 if i == 0 {
@@ -455,6 +480,9 @@ impl AppState {
     }
 
     pub fn select_next_exp(&mut self) {
+        if self.expressions.is_empty() {
+            return;
+        }
         let i = match self.expressions_state.selected() {
             Some(i) => {
                 if i == self.expressions.len() - 1 {
@@ -720,7 +748,7 @@ impl Keybinds {
     pub fn new() -> Self {
         // exp
 
-        let exp_titles = ["Enter", "C-Enter", "I", "Y", "D", "Up", "Down"]
+        let exp_titles = ["Enter", "C-Enter", "I", "Y", "D", "E", "C-r", "Up", "Down"]
             .iter()
             .map(|kb| kb.to_string())
             .collect();
@@ -731,6 +759,8 @@ impl Keybinds {
                 "Focuses the Search Box\n‎\nPress <I> to see Search Box keybinds.",
                 "Copies Selected Expression into Input Box\n‎\nPress <I> to see Search Box keybinds.",
                 "Deletes the Selected Expression\n‎\nThis will also remove the expression from your words.txt file.\nYou can set `\"del_word\": true` in your config.json to automatically delete selected Expressions from your words.txt after updating their Anki Notes.",
+                "Opens Note GUI\n‎\nOpens Anki's Note Editor GUI for the selected Expression\nNote: Only opens the GUI if the Expression has an ID.",
+                "Edit Expression\n‎\nFocuses the Search Box and changes the selected Expression's text on Enter.\nPress <I> to see Search Box keybinds.",
                 "Selects the Previous Expression\n‎\nFocuses the Previous Expression in the Expressions List.",
                 "Selects the Next Expression\n‎\nFocuses the Next Expression in the Expressions List.",
             ]
@@ -782,7 +812,7 @@ impl Keybinds {
 
         // \nYou can update a specific Anki Note by entering the Anki Note ID into the Search Box.\nThis can be useful in rare cases where Anki may not be able to find the Note containing the selected Expression.
 
-        let input_abouts = ["Submits the Current Input\n‎\nYou can jump to a specific Expression by entering it's List number.\nYou can also jump to a specific Expression by entering the Expression. Note that it must be an exact match.", 
+        let input_abouts = ["Submits the Current Input\n‎\nYou can jump to a specific Expression by entering it's List number.\nYou can also jump to a specific Expression by entering the Expression. Note that it must be an exact match.",
             "Pastes from Clipboard\n‎\nPastes the current copied text from the Clipboard into the Search Box.",
             "Selects the Previous Character\n‎\nSelects the Previous Character of the Text in the Search Box.",
             "Selects the Next Character\n‎\nFocuses the Next Char of the Text in the Search Box.",

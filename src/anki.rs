@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use tokio::runtime::Runtime;
+//use tokio::runtime::Runtime;
 
 #[derive(Serialize, Deserialize)]
 struct Note {
@@ -125,7 +125,6 @@ pub async fn update_anki_cards(
     let mut failed_words: Vec<&str> = Vec::new();
     //let mut note_ids_and_sentences: Vec<(Option<u128>, AnkiSentence)> = Vec::new();
     
-    let mut results: Vec<Result<(Option<u128>, AnkiSentence), tokio::task::JoinError>> = Vec::new();
         let tasks: Vec<_> = sentence_objs_vec
             .into_iter()
             .map(|sent| {
@@ -153,7 +152,7 @@ pub async fn update_anki_cards(
             .collect();
 
         // Await all the tasks to complete
-        results = join_all(tasks).await;
+        let results = join_all(tasks).await;
 
     let note_ids_and_sentences: Vec<(Option<u128>, AnkiSentence)> =
         results.into_iter().map(|res| res.unwrap()).collect();
