@@ -170,7 +170,6 @@ impl AppState {
                 .await
             {
                 Ok(_) => {
-                    self.err_msg = None;
                     if self.expressions[i].exact_search {
                         self.info.msg = format!(
                             "Fetched Massif Sentences for {} in {}s",
@@ -190,7 +189,8 @@ impl AppState {
                 Err(err) => {
                     self.select_mode = SelectMode::Expressions;
                     self.info.msg = None;
-                    self.err_msg = Some(format!("Error Fetching {}: {}", &current_word, err));
+                    self.errors
+                        .push(format!("Error Fetching {}: {}", &current_word, err));
                 }
             }
         }

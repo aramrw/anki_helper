@@ -163,7 +163,7 @@ impl AppState {
                 SelectMode::Ntbm if key.kind == KeyEventKind::Press => match key.code {
                     KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
                         if self.notes_to_be_created.sentences.is_empty() {
-                            self.err_msg = Some("Error: You must have at least 1 sentence selected to update or create a Note".to_string());
+                            self.errors.push("Error: You must have at least 1 sentence selected to update or create a Note".to_string());
                             return Ok(());
                         }
 
@@ -264,7 +264,7 @@ impl AppState {
         };
 
         if res.is_none() {
-            self.err_msg = Some(res_err);
+            self.errors.push(res_err);
             return;
         }
 
@@ -315,10 +315,7 @@ impl AppState {
                 self.restart_program();
                 true
             }
-            KeyCode::Char('C') => {
-                self.err_msg = None;
-                true
-            }
+            KeyCode::Char('C') => true,
             _ => false,
         }
     }

@@ -81,7 +81,7 @@ pub(crate) struct AppState {
     pub expressions_state: ListState,
     pub selected_expression: Option<usize>,
     pub select_mode: SelectMode,
-    pub err_msg: Option<String>,
+    pub errors: Vec<String>,
     pub info: Info,
     pub input: InputBox,
     pub keybinds: Keybinds,
@@ -101,12 +101,17 @@ impl AppState {
             ),
         };
 
+        let mut errors = Vec::new();
+        if let Some(err) = err_msg {
+            errors.push(err);
+        }
+
         Self {
             expressions: Vec::new(),
             expressions_state: ListState::default(),
             selected_expression: Some(0),
             select_mode: SelectMode::Expressions,
-            err_msg,
+            errors,
             info: Info::default(),
             input: InputBox::default(),
             keybinds: Keybinds::new(),
@@ -127,7 +132,9 @@ impl AppState {
 
         match self.read_words_file().await {
             Ok(_) => {}
-            Err(err) => self.err_msg = Some(format!("Error Reading `words.txt`: {}", err)),
+            Err(err) => self
+                .errors
+                .push(format!("Error Reading `words.txt`: {}", err)),
         }
 
         loop {
@@ -156,7 +163,7 @@ impl AppState {
 
     #[allow(dead_code)]
     pub fn update_error_msg(&mut self, title: &str, err: String) {
-        self.err_msg = Some(format!("{}: {}", title, err));
+        self.errors.push(format!("{}: {}", title, err));
     }
 }
 

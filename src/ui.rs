@@ -78,12 +78,13 @@ impl AppState {
     }
 
     fn rend_err(&self, area: Rect, buf: &mut Buffer) {
-        let (msg, style) = match &self.err_msg {
-            Some(msg) => (
-                msg.clone(),
+        let (msg, style) = match &self.errors.len() {
+            len if *len > 0 => (
+                len.to_string(),
                 Style::default().red().add_modifier(Modifier::RAPID_BLINK),
             ),
-            None => ("No Errors. :-)".to_string(), Style::default().green()),
+            0 => ("No Errors. :-)".to_string(), Style::default().green()),
+            _ => unreachable!(),
         };
 
         let text = Text::from(Line::from(msg).patch_style(style));
